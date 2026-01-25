@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     easydns = {
-      source = "registry.terraform.io/easydns/easydns"
+      source = "registry.terraform.io/CMDennis/easydns"
     }
   }
 }

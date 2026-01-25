@@ -1,4 +1,4 @@
-module github.com/easydns/terraform-provider-easydns
+module github.com/CMDennis/terraform-provider-easydns
 
 go 1.21
 

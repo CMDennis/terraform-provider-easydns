@@ -24,7 +24,7 @@ A Terraform provider for managing DNS records and zones via the [EasyDNS REST AP
 terraform {
   required_providers {
     easydns = {
-      source = "easydns/easydns"
+      source = "CMDennis/easydns"
     }
   }
 }
@@ -33,7 +33,7 @@ terraform {
 ### Building from Source
 
 ```bash
-git clone https://github.com/easydns/terraform-provider-easydns.git
+git clone https://github.com/CMDennis/terraform-provider-easydns.git
 cd terraform-provider-easydns
 go build -o terraform-provider-easydns
 ```
@@ -45,7 +45,7 @@ Create or update `~/.terraformrc`:
 ```hcl
 provider_installation {
   dev_overrides {
-    "registry.terraform.io/easydns/easydns" = "/path/to/terraform-provider-easydns"
+    "registry.terraform.io/CMDennis/easydns" = "/path/to/terraform-provider-easydns"
   }
   direct {}
 }
@@ -57,7 +57,7 @@ provider_installation {
 terraform {
   required_providers {
     easydns = {
-      source = "easydns/easydns"
+      source = "CMDennis/easydns"
     }
   }
 }
@@ -381,7 +381,7 @@ Each record in `records` contains:
 terraform {
   required_providers {
     easydns = {
-      source = "easydns/easydns"
+      source = "CMDennis/easydns"
     }
   }
 }

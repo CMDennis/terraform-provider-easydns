@@ -5,7 +5,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/easydns/terraform-provider-easydns/internal/provider"
+	"github.com/CMDennis/terraform-provider-easydns/internal/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
@@ -20,7 +20,7 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "registry.terraform.io/easydns/easydns",
+		Address: "registry.terraform.io/CMDennis/easydns",
 		Debug:   debug,
 	}
 
