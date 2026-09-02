@@ -1,7 +1,13 @@
+# Pin the toolchain to the one go.mod selects, so a local run cannot silently
+# download a newer Go than CI has and pass a gate that CI then fails. CI gets
+# this pin from actions/setup-go reading go.mod; this is the local equivalent.
+GOTOOLCHAIN := go1.26.8
+export GOTOOLCHAIN
+
 TFPLUGINDOCS_VERSION ?= v0.25.0
 GOLANGCI_LINT_VERSION ?= v2.8.0
 GOVULNCHECK_VERSION ?= v1.7.0
-GORELEASER_VERSION ?= v2.18.0
+GORELEASER_VERSION ?= v2.17.0
 ACTIONLINT_VERSION ?= v1.7.7
 
 .PHONY: acceptance-compile actions-check build check ci coverage docs docs-check docs-validate examples-check fmt fmt-check integration-compile lint release-check test test-race tidy-check vet vuln
