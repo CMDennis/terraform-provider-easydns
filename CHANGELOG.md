@@ -3,7 +3,17 @@
 All notable changes will be documented here. Releases follow Semantic
 Versioning after v1.0.0.
 
-## v1.0.0
+## v1.0.1
+
+Supersedes v1.0.0, which was withdrawn. A test fixture in the domain list
+tests carried a real account username taken from a live sandbox response.
+It was replaced with a neutral value and removed from the repository history,
+so v1.0.0 no longer exists as a tag, release, or resolvable revision.
+
+No provider code changed between the two. The affected file is a test and was
+never part of a released binary.
+
+## v1.0.0 (withdrawn)
 
 First stable release. Covers every operation in the pinned EasyDNS OpenAPI
 v1.1.1 document except two deliberate exclusions.
