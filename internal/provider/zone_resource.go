@@ -45,7 +45,8 @@ func (r *ZoneResource) Metadata(ctx context.Context, req resource.MetadataReques
 
 func (r *ZoneResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a DNS zone in EasyDNS. This resource is import-only - zones must be created in the EasyDNS dashboard, then imported into Terraform.",
+		Description:        "Manages a DNS zone in EasyDNS. This resource is import-only - zones must be created in the EasyDNS dashboard, then imported into Terraform.",
+		DeprecationMessage: "easydns_zone is deprecated and will be removed in v2.0.0. Use easydns_domain, which can add a domain rather than only adopt one, and exposes the same fields plus cloned_to and subscription_id. See the migration guide in the provider documentation.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The zone identifier (same as domain).",
@@ -112,7 +113,7 @@ func (r *ZoneResource) Create(ctx context.Context, req resource.CreateRequest, r
 
 	// Check if the zone already exists - if so, treat this as an implicit import
 	domain := plan.Domain.ValueString()
-	zone, err := r.client.GetZone(domain)
+	zone, err := r.client.GetZone(ctx, domain)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Zone Not Found",
@@ -153,7 +154,7 @@ func (r *ZoneResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 		return
 	}
 
-	zone, err := r.client.GetZone(state.Domain.ValueString())
+	zone, err := r.client.GetZone(ctx, state.Domain.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reading zone",

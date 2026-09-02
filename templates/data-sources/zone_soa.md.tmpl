@@ -1,0 +1,15 @@
+---
+page_title: "easydns_zone_soa Data Source - EasyDNS"
+description: |-
+  Fetches the current SOA serial for an EasyDNS zone.
+---
+
+
+# easydns_zone_soa (Data Source)
+
+~> **Unverified; every live read failed.** Against the EasyDNS sandbox this endpoint answered `HTTP 400: timeout on read select()` for every domain tried, on three consecutive attempts. That looks like a backend timeout rather than a rejection, and it may behave correctly in production; see the [verification status guide](../guides/verification-status).
+
+
+{{tffile "examples/data-sources/zone_soa/example_1.tf"}}
+
+{{ .SchemaMarkdown | trimspace }}

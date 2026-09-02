@@ -1,0 +1,27 @@
+{
+  "msg": "OK",
+  "tm": 1788307200,
+  "data": {
+    "alpha.invalid": {
+      "reglock": true,
+      "renewal": "renew",
+      "auto_renew": true,
+      "auto_renew_card_id": "card_example",
+      "let_expire": false,
+      "expiry": "2030-01-02",
+      "local_registrar": true,
+      "supports_reglock": true
+    },
+    "zeta.invalid": {
+      "reglock": false,
+      "renewal": "expire",
+      "auto_renew": false,
+      "let_expire": true,
+      "let_expire_failed": false,
+      "expiry": "2031-06-30",
+      "local_registrar": false,
+      "supports_reglock": false
+    }
+  },
+  "status": 200
+}

@@ -1,0 +1,19 @@
+{
+  "msg": "OK",
+  "data": {
+    "user": "example-user",
+    "0": {
+      "name": "alpha.invalid",
+      "link": "https://sandbox.rest.easydns.net/domain/alpha.invalid?format=json"
+    },
+    "1": {
+      "name": "zeta.invalid",
+      "link": "https://sandbox.rest.easydns.net/domain/zeta.invalid?format=json"
+    }
+  },
+  "total": 2,
+  "start": 0,
+  "max": 1000,
+  "count": 2,
+  "status": 200
+}

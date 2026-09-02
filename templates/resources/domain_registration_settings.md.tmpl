@@ -1,0 +1,28 @@
+---
+page_title: "easydns_domain_registration_settings Resource - EasyDNS"
+description: |-
+  Manages the registrar lock and renewal policy of an existing EasyDNS domain.
+---
+
+
+# easydns_domain_registration_settings (Resource)
+
+Manages the registrar lock and renewal action of a domain that already exists on EasyDNS. This resource adopts an existing domain; it never creates or deletes one.
+
+{{tffile "examples/resources/domain_registration_settings/example_1.tf"}}
+
+## Destroy behavior
+
+Destroying this resource stops Terraform managing the policy. **The remote reglock and renewal settings are left exactly as they are.** EasyDNS has no operation that clears them, and silently unlocking a domain or changing its renewal action on destroy would be a surprising registrar side effect. Terraform emits a warning saying so.
+
+## Registrar lock support
+
+Not every TLD supports registrar locking. When `supports_reglock` is `false`, EasyDNS ignores the requested `reglock` and the provider emits a warning; the renewal policy is still applied. The provider does not poll forever waiting for a lock the registry will never report.
+
+## Import
+
+```shell
+terraform import easydns_domain_registration_settings.example example.com
+```
+
+{{ .SchemaMarkdown | trimspace }}

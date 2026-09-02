@@ -1,0 +1,28 @@
+{
+  "msg": "OK",
+  "tm": 1788367325,
+  "data": {
+    "domains": {
+      "alpha.invalid": {
+        "reglock": false,
+        "let_expire": false,
+        "renewal": "remind",
+        "local_registrar": true,
+        "expiry": "2026-11-05",
+        "auto_renew": false,
+        "auto_renew_card_id": false
+      },
+      "zeta.invalid": {
+        "reglock": false,
+        "let_expire": false,
+        "renewal": "remind",
+        "local_registrar": true,
+        "expiry": "2026-11-12",
+        "auto_renew": false,
+        "auto_renew_card_id": false
+      }
+    },
+    "user": "example-user"
+  },
+  "status": 200
+}

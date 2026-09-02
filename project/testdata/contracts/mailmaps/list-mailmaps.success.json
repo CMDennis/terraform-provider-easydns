@@ -1,0 +1,18 @@
+{
+  "status": 200,
+  "tm": 1788307200,
+  "msg": "OK",
+  "data": [
+    {
+      "active": 1,
+      "alias": "support@example.invalid",
+      "destination": "one@example.invalid, two@example.invalid",
+      "domain": "example.invalid",
+      "host": "@",
+      "last_modified": "2026-09-01 12:03:00",
+      "mailmap_id": 1234
+    }
+  ],
+  "count": 1,
+  "total": 1
+}

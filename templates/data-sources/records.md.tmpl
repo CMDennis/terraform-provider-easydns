@@ -1,0 +1,30 @@
+---
+page_title: "easydns_records Data Source - EasyDNS"
+description: |-
+  Fetches all DNS records for a domain from EasyDNS.
+---
+
+
+# easydns_records (Data Source)
+
+Use this data source to retrieve all DNS records for a domain. Useful for auditing, finding record IDs for import, or filtering records by type.
+
+## Example Usage
+
+### List All Records
+
+{{tffile "examples/data-sources/records/example_1.tf"}}
+
+### Server-side search
+
+{{tffile "examples/data-sources/records/example_2.tf"}}
+
+### Filter by Record Type
+
+{{tffile "examples/data-sources/records/example_3.tf"}}
+
+### Find Record IDs for Import
+
+{{tffile "examples/data-sources/records/example_4.tf"}}
+
+{{ .SchemaMarkdown | trimspace }}

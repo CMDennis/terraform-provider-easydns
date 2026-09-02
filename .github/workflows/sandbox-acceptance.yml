@@ -1,0 +1,159 @@
+name: Sandbox acceptance
+
+on:
+  schedule:
+    - cron: '17 7 * * 1'
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Acceptance suite to run
+        required: true
+        default: read-only
+        type: choice
+        options:
+          - read-only
+          - records-and-mail
+          - v0.1.1-migration
+          - registrar
+          - domain-lifecycle
+
+permissions:
+  contents: read
+
+concurrency:
+  group: easydns-sandbox-${{ github.event.inputs.suite || 'read-only' }}
+  cancel-in-progress: false
+
+jobs:
+  read-only:
+    if: github.event_name == 'schedule' || github.event.inputs.suite == 'read-only'
+    runs-on: ubuntu-latest
+    environment: easydns-sandbox-readonly
+    env:
+      TF_ACC: '1'
+      EASYDNS_ACC_SANDBOX: '1'
+      EASYDNS_API_TOKEN: ${{ secrets.EASYDNS_API_TOKEN }}
+      EASYDNS_API_KEY: ${{ secrets.EASYDNS_API_KEY }}
+      EASYDNS_TEST_DOMAIN: ${{ vars.EASYDNS_TEST_DOMAIN }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.6
+          terraform_wrapper: false
+      - name: Require the sandbox fixture
+        run: test -n "$EASYDNS_API_TOKEN" -a -n "$EASYDNS_API_KEY" -a -n "$EASYDNS_TEST_DOMAIN"
+      - name: Run read-only client and framework tests
+        run: |
+          go test -tags=integration -v ./internal/provider -run '^TestIntegrationGet' -timeout=20m
+          go test -tags=acceptance -v ./internal/provider -run '^TestAcc(ReadOnlyDomain|ZoneResourceAdoption)$' -timeout=20m
+
+  records-and-mail:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.suite == 'records-and-mail'
+    runs-on: ubuntu-latest
+    environment: easydns-sandbox-mutations
+    env:
+      TF_ACC: '1'
+      EASYDNS_ACC_SANDBOX: '1'
+      EASYDNS_ACC_ALLOW_MUTATIONS: sandbox-writes-only
+      EASYDNS_API_TOKEN: ${{ secrets.EASYDNS_API_TOKEN }}
+      EASYDNS_API_KEY: ${{ secrets.EASYDNS_API_KEY }}
+      EASYDNS_TEST_DOMAIN: ${{ vars.EASYDNS_TEST_DOMAIN }}
+      EASYDNS_TEST_MAILMAP_DESTINATION: ${{ vars.EASYDNS_TEST_MAILMAP_DESTINATION }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.6
+          terraform_wrapper: false
+      - name: Require disposable fixtures
+        run: test -n "$EASYDNS_API_TOKEN" -a -n "$EASYDNS_API_KEY" -a -n "$EASYDNS_TEST_DOMAIN" -a -n "$EASYDNS_TEST_MAILMAP_DESTINATION"
+      - name: Run record and mailmap lifecycles
+        run: go test -tags=acceptance -v ./internal/provider -run '^TestAcc(RecordResource|MailmapResource)$' -timeout=45m
+
+  registrar:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.suite == 'registrar'
+    runs-on: ubuntu-latest
+    environment: easydns-sandbox-registrar
+    env:
+      TF_ACC: '1'
+      EASYDNS_ACC_SANDBOX: '1'
+      EASYDNS_ACC_ALLOW_DELEGATION: sandbox-delegation-writes-only
+      EASYDNS_ACC_ALLOW_REGISTRAR_MUTATIONS: sandbox-registrar-writes-only
+      EASYDNS_ACC_ALLOW_GLUE: sandbox-glue-writes-only
+      EASYDNS_API_TOKEN: ${{ secrets.EASYDNS_API_TOKEN }}
+      EASYDNS_API_KEY: ${{ secrets.EASYDNS_API_KEY }}
+      EASYDNS_TEST_DELEGATION_DOMAIN: ${{ vars.EASYDNS_TEST_DELEGATION_DOMAIN }}
+      EASYDNS_TEST_NAMESERVERS_INITIAL: ${{ vars.EASYDNS_TEST_NAMESERVERS_INITIAL }}
+      EASYDNS_TEST_NAMESERVERS_UPDATED: ${{ vars.EASYDNS_TEST_NAMESERVERS_UPDATED }}
+      EASYDNS_TEST_REGISTRAR_DOMAIN: ${{ vars.EASYDNS_TEST_REGISTRAR_DOMAIN }}
+      EASYDNS_TEST_GLUE_DOMAIN: ${{ vars.EASYDNS_TEST_GLUE_DOMAIN }}
+      EASYDNS_TEST_GLUE_HOST: ${{ vars.EASYDNS_TEST_GLUE_HOST }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.6
+          terraform_wrapper: false
+      - name: Run protected registrar fixture lifecycles
+        run: go test -tags=acceptance -v ./internal/provider -run '^TestAcc(DomainNameserversResource|DomainRegistrationSettingsResource|GlueRecordResource)$' -timeout=45m
+
+  v0-1-1-migration:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.suite == 'v0.1.1-migration'
+    runs-on: ubuntu-latest
+    environment: easydns-sandbox-mutations
+    env:
+      TF_ACC: '1'
+      EASYDNS_ACC_SANDBOX: '1'
+      EASYDNS_ACC_ALLOW_MIGRATION: v0.1.1-sandbox-record
+      EASYDNS_API_TOKEN: ${{ secrets.EASYDNS_API_TOKEN }}
+      EASYDNS_API_KEY: ${{ secrets.EASYDNS_API_KEY }}
+      EASYDNS_TEST_DOMAIN: ${{ vars.EASYDNS_TEST_DOMAIN }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.6
+          terraform_wrapper: false
+      - name: Test v0.1.1 state with the current provider
+        run: go test -tags=acceptance -v ./internal/provider -run '^TestAccV011RecordMigration$' -timeout=45m
+
+  domain-lifecycle:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.suite == 'domain-lifecycle'
+    runs-on: ubuntu-latest
+    environment: easydns-sandbox-domain-deletion
+    env:
+      TF_ACC: '1'
+      EASYDNS_ACC_SANDBOX: '1'
+      EASYDNS_ACC_ALLOW_DOMAIN_LIFECYCLE: delete-disposable-sandbox-domain
+      EASYDNS_API_TOKEN: ${{ secrets.EASYDNS_API_TOKEN }}
+      EASYDNS_API_KEY: ${{ secrets.EASYDNS_API_KEY }}
+      EASYDNS_TEST_NEW_DOMAIN: ${{ vars.EASYDNS_TEST_NEW_DOMAIN }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.6
+          terraform_wrapper: false
+      - name: Run disposable domain lifecycle
+        run: go test -tags=acceptance -v ./internal/provider -run '^TestAccDomainResourceLifecycle$' -timeout=45m

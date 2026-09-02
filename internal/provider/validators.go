@@ -177,6 +177,27 @@ func IPv6Validator() validator.String {
 	return ipv6Validator{}
 }
 
+type ipAddressValidator struct{}
+
+func (ipAddressValidator) Description(context.Context) string {
+	return "must be an IPv4 or IPv6 address"
+}
+
+func (ipAddressValidator) MarkdownDescription(ctx context.Context) string {
+	return ipAddressValidator{}.Description(ctx)
+}
+
+func (ipAddressValidator) ValidateString(_ context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+	if net.ParseIP(req.ConfigValue.ValueString()) == nil {
+		resp.Diagnostics.AddAttributeError(req.Path, "Invalid IP Address", fmt.Sprintf("%q is not a valid IPv4 or IPv6 address.", req.ConfigValue.ValueString()))
+	}
+}
+
+func IPAddressValidator() validator.String { return ipAddressValidator{} }
+
 // ============================================================================
 // Priority Validator (for MX/SRV records)
 // ============================================================================
@@ -207,4 +228,101 @@ func (v priorityValidator) ValidateInt64(ctx context.Context, req validator.Int6
 
 func PriorityValidator() validator.Int64 {
 	return priorityValidator{}
+}
+
+type ttlValidator struct{}
+
+func (ttlValidator) Description(context.Context) string {
+	return "validates TTL is at least 300 seconds"
+}
+
+func (ttlValidator) MarkdownDescription(context.Context) string {
+	return "must be at least 300 seconds"
+}
+
+func (ttlValidator) ValidateInt64(_ context.Context, req validator.Int64Request, resp *validator.Int64Response) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+	if req.ConfigValue.ValueInt64() < 300 {
+		resp.Diagnostics.AddError("Invalid TTL", "TTL must be at least 300 seconds.")
+	}
+}
+
+func TTLValidator() validator.Int64 {
+	return ttlValidator{}
+}
+
+type recordWriteModeValidator struct{}
+
+func (recordWriteModeValidator) Description(context.Context) string {
+	return "validates an EasyDNS record write mode"
+}
+
+func (recordWriteModeValidator) MarkdownDescription(context.Context) string {
+	return "must be `synchronous` or `asynchronous`"
+}
+
+func (recordWriteModeValidator) ValidateString(_ context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+	value := req.ConfigValue.ValueString()
+	if value != string(RecordWriteModeSynchronous) && value != string(RecordWriteModeAsynchronous) {
+		resp.Diagnostics.AddError("Invalid Record Write Mode", "Record write mode must be 'synchronous' or 'asynchronous'.")
+	}
+}
+
+func RecordWriteModeValidator() validator.String {
+	return recordWriteModeValidator{}
+}
+
+type nonNegativeValidator struct {
+	name string
+}
+
+func (v nonNegativeValidator) Description(context.Context) string {
+	return fmt.Sprintf("validates %s is non-negative", v.name)
+}
+
+func (v nonNegativeValidator) MarkdownDescription(context.Context) string {
+	return fmt.Sprintf("must be a non-negative %s", v.name)
+}
+
+func (v nonNegativeValidator) ValidateInt64(_ context.Context, req validator.Int64Request, resp *validator.Int64Response) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+	if req.ConfigValue.ValueInt64() < 0 {
+		resp.Diagnostics.AddError("Invalid Non-Negative Value", fmt.Sprintf("%s must be zero or greater.", v.name))
+	}
+}
+
+func NonNegativeValidator(name string) validator.Int64 {
+	return nonNegativeValidator{name: name}
+}
+
+type positiveValidator struct {
+	name string
+}
+
+func (v positiveValidator) Description(context.Context) string {
+	return fmt.Sprintf("validates %s is positive", v.name)
+}
+
+func (v positiveValidator) MarkdownDescription(context.Context) string {
+	return fmt.Sprintf("must be a positive %s", v.name)
+}
+
+func (v positiveValidator) ValidateInt64(_ context.Context, req validator.Int64Request, resp *validator.Int64Response) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+	if req.ConfigValue.ValueInt64() <= 0 {
+		resp.Diagnostics.AddError("Invalid Positive Value", fmt.Sprintf("%s must be greater than zero.", v.name))
+	}
+}
+
+func PositiveValidator(name string) validator.Int64 {
+	return positiveValidator{name: name}
 }

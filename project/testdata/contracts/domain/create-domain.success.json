@@ -1,0 +1,15 @@
+{
+  "msg": "OK",
+  "data": [
+    {
+      "domain": "example.invalid",
+      "term": 1,
+      "service": 3857,
+      "tld": "invalid",
+      "inv_id": 987654,
+      "currency": "USD",
+      "user": "example-user"
+    }
+  ],
+  "status": "201"
+}

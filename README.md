@@ -4,17 +4,24 @@ A Terraform provider for managing DNS records and zones via the [EasyDNS REST AP
 
 ## Features
 
-- Manage DNS records (A, AAAA, CNAME, MX, TXT, SRV, CAA, etc.)
-- Import and track existing zones
+- Manage DNS records, domains, registrar settings, delegation, glue, and mailmaps
+- Query domain, service, subscription, pricing, user, and DNS metadata
+- Invoke force-reload and primary-nameserver actions with Terraform 1.14+
 - Support for sandbox and production environments
-- Async API support for better rate limiting
+- Synchronous and asynchronous record writes with read reconciliation
 - Input validation for hostnames, IP addresses, and record types
+- Exactly-one-write mutation handling followed by read reconciliation
 
 ## Requirements
 
-- [Terraform](https://www.terraform.io/downloads.html) >= 1.0
-- [Go](https://golang.org/doc/install) >= 1.21 (for building)
+- [Terraform](https://www.terraform.io/downloads.html) >= 1.14
+- [Go](https://go.dev/doc/install) >= 1.25 (for building)
 - EasyDNS API credentials (token and key)
+
+For a first sandbox configuration, follow the
+[five-minute quick start](docs/guides/quick-start.md). The generated
+[Registry documentation](docs/index.md) contains the complete provider,
+resource, data-source, action, migration, safety, and troubleshooting guides.
 
 ## Installation
 
@@ -63,10 +70,10 @@ terraform {
 }
 
 provider "easydns" {
-  environment   = "sandbox"    # or "production"
-  api_token     = "your-token" # or use EASYDNS_API_TOKEN env var
-  api_key       = "your-key"   # or use EASYDNS_API_KEY env var
-  use_async_api = false        # optional: use async API for rate limiting
+  environment       = "sandbox"     # or "production"
+  api_token         = "your-token"  # or use EASYDNS_API_TOKEN env var
+  api_key           = "your-key"    # or use EASYDNS_API_KEY env var
+  record_write_mode = "synchronous" # or "asynchronous"
 }
 ```
 
@@ -78,7 +85,9 @@ provider "easydns" {
 | `api_url` | Custom API URL (overrides environment) | - | `EASYDNS_API_URL` |
 | `api_token` | EasyDNS API token | - | `EASYDNS_API_TOKEN` |
 | `api_key` | EasyDNS API key | - | `EASYDNS_API_KEY` |
-| `use_async_api` | Use async API for record operations | `false` | `EASYDNS_USE_ASYNC_API` |
+| `record_write_mode` | Default record mutation mode: `synchronous` or `asynchronous` | `synchronous` | `EASYDNS_RECORD_WRITE_MODE` |
+| `enable_domain_registration` | Explicit opt-in for billable registry registration | `false` | `EASYDNS_ENABLE_DOMAIN_REGISTRATION` |
+| `use_async_api` | Deprecated Boolean compatibility alias | `false` | `EASYDNS_USE_ASYNC_API` |
 
 ### Environment URLs
 
@@ -87,21 +96,27 @@ provider "easydns" {
 | Sandbox | `https://sandbox.rest.easydns.net` |
 | Production | `https://rest.easydns.net` |
 
-### Async API
+### Record write modes
 
-The async API queues zone reloads instead of processing them immediately. This can help with rate limiting when making many changes. Enable it with:
+Synchronous writes request an immediate zone change. Asynchronous writes queue
+zone regeneration. Both modes use the same Terraform lifecycle and wait until
+the requested record is visible, updated, or absent. A write is issued only
+once; uncertain results are reconciled through reads.
 
 ```hcl
 provider "easydns" {
-  use_async_api = true
+  record_write_mode = "asynchronous"
 }
 ```
 
 Or via environment variable:
 
 ```bash
-export EASYDNS_USE_ASYNC_API=true
+export EASYDNS_RECORD_WRITE_MODE=asynchronous
 ```
+
+`use_async_api` remains available for v0.1 compatibility but is deprecated.
+Do not configure both settings.
 
 ---
 
@@ -171,6 +186,8 @@ resource "easydns_record" "ipv6" {
 | `rdata` | string | Yes | Record data (IP address, hostname, text value) |
 | `ttl` | number | No | Time to live in seconds (default: 600) |
 | `prio` | number | No | Priority for MX/SRV records, 0-100 (default: 0) |
+| `geozone_id` | number | No | EasyDNS geo-region ID; zero means global (default: 0) |
+| `write_mode` | string | No | Per-record `synchronous` or `asynchronous` override |
 
 #### Attribute Reference
 
@@ -323,6 +340,7 @@ output "www_ip" {
 | `rdata` | Record data |
 | `ttl` | Time to live |
 | `prio` | Priority |
+| `geozone_id` | EasyDNS geo-region ID |
 | `last_mod` | Last modification timestamp |
 
 ---
@@ -354,6 +372,7 @@ output "total_records" {
 | Attribute | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `domain` | string | Yes | The domain/zone name |
+| `search_keyword` | string | No | Optional EasyDNS server-side search keyword |
 
 #### Attribute Reference
 
@@ -371,7 +390,40 @@ Each record in `records` contains:
 | `rdata` | Record data |
 | `ttl` | Time to live |
 | `prio` | Priority |
+| `geozone_id` | EasyDNS geo-region ID |
 | `last_mod` | Last modification timestamp |
+
+---
+
+### Additional DNS data sources
+
+- `easydns_parsed_records` returns EasyDNS-expanded zone-file records,
+  including `url` and `orig_rdata`.
+- `easydns_zone_soa` returns the current SOA serial.
+- `easydns_geo_regions` returns stable ID-sorted regions and follows all pages
+  unless `start` or `max` requests one page.
+
+See the pages in `docs/data-sources/` for complete schemas and examples.
+
+---
+
+### Mailmaps, metadata, and pricing
+
+- `easydns_mailmap` manages a forwarding address with an immutable numeric ID
+  and exactly-one-write reconciliation.
+- `easydns_mailmaps` lists a domain's maps in stable ID order.
+- `easydns_current_user` returns authenticated-account metadata and marks all
+  identity, address, phone, email, and URL fields sensitive.
+- `easydns_service` and `easydns_subscription_service` describe service IDs.
+- `easydns_domain_pricing` returns domain availability and account-specific
+  exact-decimal prices without initiating registration.
+
+### Actions
+
+Terraform 1.14+ can invoke `easydns_force_zone_reload` and
+`easydns_set_primary_nameserver`. These imperative operations are sent exactly
+once and do not create durable resource state. See `docs/actions/` for complete
+examples and the ambiguous-outcome safety procedure.
 
 ---
 
@@ -387,8 +439,8 @@ terraform {
 }
 
 provider "easydns" {
-  environment   = "sandbox"
-  use_async_api = true  # Enable async API for rate limiting
+  environment       = "sandbox"
+  record_write_mode = "asynchronous"
   # Credentials via EASYDNS_API_TOKEN and EASYDNS_API_KEY
 }
 
@@ -455,21 +507,34 @@ output "web_server" {
 |------|-------------|---------------|
 | A | IPv4 address | No |
 | AAAA | IPv6 address | No |
-| CNAME | Canonical name (alias) | No |
-| MX | Mail exchange | Yes |
-| TXT | Text record | No |
-| NS | Nameserver | No |
-| SRV | Service record | Yes |
+| AFSDB | AFS database service | No |
+| ANAME | EasyDNS apex alias | No |
 | CAA | Certificate Authority Authorization | No |
+| CERT | Certificate record | No |
+| CNAME | Canonical name (alias) | No |
+| DYN | EasyDNS dynamic record | No |
+| MX | Mail exchange | Yes |
+| NAPTR | Naming Authority Pointer | No |
+| NS | Nameserver | No |
 | PTR | Pointer record | No |
+| SECONDARY | EasyDNS secondary DNS record | No |
+| SOA | Start of Authority | No |
 | SPF | Sender Policy Framework (legacy) | No |
-| ANAME | ALIAS record | No |
+| SRV | Service record | Yes |
 | SSHFP | SSH fingerprint | No |
+| STEALTH | EasyDNS stealth forwarding | No |
 | TLSA | TLS Authentication | No |
+| TXT | Text record | No |
+| URL | EasyDNS URL forwarding | No |
+| URLHTTPS | EasyDNS HTTPS URL forwarding | No |
 
 ---
 
 ## Development
+
+See [testing and contributing](docs/guides/testing.md),
+[architecture and API coverage](docs/guides/architecture-and-coverage.md), and
+the [release procedure](docs/guides/releasing.md) for the development workflow.
 
 ### Building
 
@@ -480,14 +545,19 @@ go build -o terraform-provider-easydns
 ### Testing
 
 ```bash
-# Unit tests
-go test -v ./...
+# Complete local quality suite
+make check
 
-# Integration tests (requires API credentials)
+# Read-only sandbox integration tests (requires sandbox credentials)
+export TF_ACC=1
+export EASYDNS_ACC_SANDBOX=1
 export EASYDNS_API_TOKEN="your-token"
 export EASYDNS_API_KEY="your-key"
 export EASYDNS_TEST_DOMAIN="your-domain.com"
 go test -tags=integration -v ./internal/provider -run TestIntegration
+
+# Record mutation tests require this additional explicit opt-in:
+export EASYDNS_ACC_ALLOW_MUTATIONS=sandbox-writes-only
 ```
 
 ### Project Structure
@@ -496,10 +566,10 @@ go test -tags=integration -v ./internal/provider -run TestIntegration
 terraform-provider-easydns/
 ├── main.go                           # Provider entry point
 ├── go.mod                            # Go module
+├── internal/client/                  # Typed, context-aware EasyDNS client
 ├── internal/provider/
 │   ├── provider.go                   # Provider configuration
-│   ├── client.go                     # EasyDNS API client
-│   ├── client_test.go                # API client tests
+│   ├── client.go                     # Compatibility aliases for the client
 │   ├── validators.go                 # Input validators
 │   ├── record_resource.go            # easydns_record resource
 │   ├── record_data_source.go         # easydns_record data source

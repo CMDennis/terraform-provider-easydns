@@ -1,0 +1,9 @@
+{
+  "msg": "OK",
+  "data": [
+    {
+      "domain": "example.invalid"
+    }
+  ],
+  "status": "200"
+}

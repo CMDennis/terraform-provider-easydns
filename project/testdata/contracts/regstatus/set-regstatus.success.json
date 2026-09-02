@@ -1,0 +1,14 @@
+{
+  "msg": "OK",
+  "tm": 1788307200,
+  "data": [
+    {
+      "domain": "alpha.invalid",
+      "reglock": true,
+      "renewal": "renew",
+      "change_lock": true,
+      "change_renew": true
+    }
+  ],
+  "status": 200
+}

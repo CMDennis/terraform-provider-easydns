@@ -1,0 +1,16 @@
+---
+page_title: "easydns_domains Data Source - EasyDNS"
+description: |-
+  Lists every domain associated with an EasyDNS user.
+---
+
+
+# easydns_domains (Data Source)
+
+{{tffile "examples/data-sources/domains/example_1.tf"}}
+
+Omitting `user` lists the authenticated account's domains. Results are always sorted by domain name, so the collection is stable across refreshes.
+
+EasyDNS requires a real username in this endpoint's path and rejects a placeholder, so an omitted `user` costs one extra request while the provider asks `/user` who the credentials belong to. Set `user` explicitly to avoid it.
+
+{{ .SchemaMarkdown | trimspace }}

@@ -1,0 +1,14 @@
+---
+page_title: "easydns_parsed_records Data Source - EasyDNS"
+description: |-
+  Fetches zone records as fully parsed by EasyDNS.
+---
+
+
+# easydns_parsed_records (Data Source)
+
+Returns records as they appear after EasyDNS expands custom stored values. A single stored record ID can appear more than once when it expands to multiple zone-file records.
+
+{{tffile "examples/data-sources/parsed_records/example_1.tf"}}
+
+{{ .SchemaMarkdown | trimspace }}

@@ -1,0 +1,59 @@
+---
+page_title: "EasyDNS Provider"
+description: |-
+  The EasyDNS provider is used to manage DNS records and zones via the EasyDNS REST API.
+---
+
+
+# EasyDNS Provider
+
+The EasyDNS provider allows you to manage DNS records and zones hosted on [EasyDNS](https://easydns.com/) using their REST API.
+
+## Features
+
+- Manage DNS records, domains, registrar settings, delegation, glue, and mailmaps
+- Query domain, service, subscription, pricing, user, and DNS metadata
+- Invoke explicit force-reload and primary-nameserver actions on Terraform 1.14+
+- Support for sandbox and production environments
+- Synchronous and asynchronous record writes with read reconciliation
+- Input validation for hostnames, IP addresses, and record types
+- Exactly-one-write mutation handling followed by read reconciliation
+
+## Example Usage
+
+{{tffile "examples/example_1.tf"}}
+
+## Authentication
+
+The EasyDNS provider requires API credentials (token and key) which can be obtained from your EasyDNS account dashboard.
+
+Credentials can be provided in two ways:
+
+1. **Provider configuration** (not recommended for production):
+
+{{tffile "examples/example_2.tf"}}
+
+2. **Environment variables** (recommended):
+
+```bash
+export EASYDNS_API_TOKEN="your-token"
+export EASYDNS_API_KEY="your-key"
+```
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Guides
+
+- [Five-minute sandbox quick start](guides/quick-start.md)
+- [Authentication and provider configuration](guides/provider-configuration.md)
+- [Synchronous and asynchronous record writes](guides/record-write-modes.md)
+- [DNS record patterns](guides/record-patterns.md)
+- [Registration, premium pricing, and deletion safety](guides/registrar-safety.md)
+- [Troubleshooting API behavior](guides/troubleshooting.md)
+- [Verification status: what has been run against a live API](guides/verification-status.md)
+- [Upgrade from v0.1.1](guides/v0-1-1-migration.md)
+- [Migrating from easydns_zone](guides/zone-migration.md)
+- [Security and sensitive data](guides/security.md)
+- [Architecture and API coverage](guides/architecture-and-coverage.md)
+- [Testing and contributing](guides/testing.md)
+- [Release procedure](guides/releasing.md)

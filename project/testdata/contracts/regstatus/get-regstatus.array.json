@@ -1,0 +1,17 @@
+{
+  "msg": "OK",
+  "tm": 1788307200,
+  "data": [
+    {
+      "domain": "alpha.invalid",
+      "reglock": 1,
+      "renewal": "renew",
+      "auto_renew": "Y",
+      "let_expire": "N",
+      "expiry": "2030-01-02",
+      "local_registrar": 1,
+      "supports_reglock": 1
+    }
+  ],
+  "status": 200
+}

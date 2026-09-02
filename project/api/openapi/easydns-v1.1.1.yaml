@@ -1,0 +1,4860 @@
+openapi: 3.0.1
+info:
+  title: EasyAPI REST Services API
+  contact:
+    name: EasyDNS Technologies Inc
+    url: https://easydns.com/
+    email: easyapi@easydns.com
+  license:
+    name: LGPLv2.1
+    url: https://www.gnu.org/licenses/lgpl-2.1.html
+  version: 1.1.1
+  termsOfService: https://easydns.com/terms-of-service/
+servers:
+- url: https://sandbox.rest.easydns.net/
+- url: https://rest.easydns.net/
+externalDocs:
+  description: "SEE ALSO: Sandbox legacy documentation site"
+  url: https://docs.sandbox.rest.easydns.net/
+paths:
+  /domain/{domain}:
+    get:
+      tags:
+      - domain
+      - read
+      summary: Get details about a domain on the system
+      operationId: getDomainInfo
+      parameters:
+      - name: domain
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: The requested domain was found on the system and the information
+            was returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelDomainInfo'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ResultModelDomainInfo'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ResultModelDomainInfo'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        409:
+          description: The requested resource already exists or can't be modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+    delete:
+      tags:
+      - write
+      - domain
+      - delete
+      summary: Delete an existing domain from the system
+      operationId: deleteDomain
+      parameters:
+      - name: domain
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: The provided domain was successfully deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelDomainDelete'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ResultModelDomainDelete'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ResultModelDomainDelete'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /domains/add/{domain}:
+    put:
+      tags:
+      - write
+      - domain
+      - add
+      - register
+      summary: Add a new domain to the system including registering the domain at the registry if applicable. When registering domains additional fields may be required depending on the TLD
+      operationId: createDomain
+      parameters:
+      - name: domain
+        in: path
+        required: true
+        description: The domain name to add to the system
+        example: "example.com"
+        schema:
+          type: string
+      requestBody:
+        description: Request data containing relevant domain creation information needed to add a domain to the system
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/BodyDomainCreateDefault'
+                - $ref: '#/components/schemas/BodyDomainCreateDNSOnly'
+            examples:
+              With registration:
+                value:
+                  service: dns
+                  term: 1
+                  currency: USD
+                  domain_group: mygroup
+                  contacts:
+                    owner:
+                      first_name: Tyler
+                      last_name: Durdun
+                      address1: 123 Sesame St.
+                      city: Toronto
+                      state: ON
+                      country: CA
+                      postal_code: 1A1 B2B
+                      phone: +1.4165555555
+                      email: example@example.com
+                    admin:
+                      first_name: Tyler
+                      last_name: Durdun
+                      address1: 123 Sesame St.
+                      city: Toronto
+                      state: ON
+                      country: CA
+                      postal_code: 1A1 B2B
+                      phone: +1.4165555555
+                      email: example@example.com
+                    tech:
+                      first_name: Tyler
+                      last_name: Durdun
+                      address1: 123 Sesame St.
+                      city: Toronto
+                      state: ON
+                      country: CA
+                      postal_code: 1A1 B2B
+                      phone: +1.4165555555
+                      email: example@example.com
+                    billing:
+                      first_name: Tyler
+                      last_name: Durdun
+                      address1: 123 Sesame St.
+                      city: Toronto
+                      state: ON
+                      country: CA
+                      postal_code: 1A1 B2B
+                      phone: +1.4165555555
+                      email: example@example.com
+              With premium registration:
+                value:
+                  service: dns
+                  term: 1
+                  premium: 1
+                  premium_price: "47.95"
+                  contacts:
+                    owner:
+                      first_name: Tyler
+                      last_name: Durdun
+                      address1: 123 Sesame St.
+                      city: Toronto
+                      state: ON
+                      country: CA
+                      postal_code: 1A1 B2B
+                      phone: +1.4165555555
+                      email: example@example.com
+                    admin:
+                      first_name: Tyler
+                      last_name: Durdun
+                      address1: 123 Sesame St.
+                      city: Toronto
+                      state: ON
+                      country: CA
+                      postal_code: 1A1 B2B
+                      phone: +1.4165555555
+                      email: example@example.com
+                    tech:
+                      first_name: Tyler
+                      last_name: Durdun
+                      address1: 123 Sesame St.
+                      city: Toronto
+                      state: ON
+                      country: CA
+                      postal_code: 1A1 B2B
+                      phone: +1.4165555555
+                      email: example@example.com
+                    billing:
+                      first_name: Tyler
+                      last_name: Durdun
+                      address1: 123 Sesame St.
+                      city: Toronto
+                      state: ON
+                      country: CA
+                      postal_code: 1A1 B2B
+                      phone: +1.4165555555
+                      email: example@example.com
+              DNS Only:
+                value:
+                  service: dns
+                  term: 1
+                  currency: CAD
+                  dns_only: 1
+                  domain_group: mygroup
+              DNS Only Secondary:
+                value:
+                  service: dns
+                  term: 1
+                  currency: USD
+                  dns_only: 1
+                  primary_ns: 1.2.3.4
+                  domain_group: mygroup
+              DNS Only with Portfolio (deprecated):
+                value:
+                  service: dns
+                  term: 1
+                  currency: CAD
+                  dns_only: 1
+                  portfolio: myport
+      responses:
+        201:
+          description: The requested domain was created on the system and registered at the registry if applicable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelDomainCreate'
+        400:
+          description: Failed to process the request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        409:
+          description: The requested resource already exists or can't be modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /domains/regstatus:
+    get:
+      tags:
+      - domain
+      - user
+      - read
+      summary: Get the reglock and renewal status for a users list of domains
+      operationId: getRegStatus
+      responses:
+        200:
+          description: The requested regstatus modification was made successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelRegStatus'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ResultModelRegStatus'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ResultModelRegStatus'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        409:
+          description: The requested resource already exists or can't be modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+    post:
+      tags:
+      - domain
+      - user
+      - write
+      summary: Set the reglock status of a set of domains owned by a user
+      operationId: setRegStatus
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/RequestModelSetRegStatus'
+            example:
+              example.com:
+                reglock: true
+                renewal: remind
+              example2.com:
+                reglock: false
+                renewal: expire
+        required: false
+      responses:
+        200:
+          description: The requested deletion of the zone record was made successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelSetRegStatus'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ResultModelSetRegStatus'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ResultModelSetRegStatus'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        409:
+          description: The requested resource already exists or can't be modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /domains/primary_ns/{domain}:
+    post:
+      tags:
+      - write
+      - domain
+      - secondary
+      summary: Set the primary NS value for a domain. Will also update domain to make it secondary
+      operationId: setPrimaryNS
+      parameters:
+      - name: domain
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPrimaryNSBody'
+      responses:
+        200:
+          description: The request for user information was made successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultSetPrimaryNS'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ResultSetPrimaryNS'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ResultSetPrimaryNS'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        404:
+          description: The requested user does not exist or does not belong to authenticated
+            user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        409:
+          description: The requested resource already exists or can't be modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /domains/list/{user}:
+    get:
+      tags:
+      - list
+      - user
+      - domain
+      - read
+      summary: Get a listing of all domains associated with a user
+      operationId: listUserDomains
+      parameters:
+      - name: user
+        in: path
+        required: true
+        schema:
+          type: string
+        example: myusername
+      responses:
+        200:
+          description: The request for the domain list was successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelUserDomainList'
+        404:
+          description: The requested user does not exist or does not belong to authenticated
+            user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /domains/glue/{domain}:
+    get:
+      tags:
+      - domain
+      - glue
+      summary: Returns any glue records associated with a domain
+      operationId: getDomainGlue
+      parameters:
+      - name: domain
+        in: path
+        required: true
+        schema:
+          type: string
+        example: example.com
+      responses:
+        200:
+          description: The request for user information was made successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelGetDomainGlue'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        404:
+          description: The requested user does not exist or does not belong to authenticated
+            user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+    put:
+      tags:
+      - domain
+      - glue
+      summary: Creates glue record information at the registry
+      operationId: createGlue
+      parameters:
+      - name: domain
+        in: path
+        required: true
+        schema:
+          type: string
+        example: example.com
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestModelCreateDomainGlue'
+      responses:
+        201:
+          description: The request to create the glue record was made successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelCreateDomainGlue'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        404:
+          description: The requested user does not exist or does not belong to authenticated
+            user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+    post:
+      tags:
+      - domain
+      - glue
+      summary: Updates an existing glue record configured at the registry with new address information
+      operationId: updateGlue
+      parameters:
+      - name: domain
+        in: path
+        required: true
+        description: Just the domain part of the nameserver FQDN.
+        schema:
+          type: string
+        example: example.com
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestModelCreateDomainGlue'
+      responses:
+        200:
+          description: The request to update the glue record was made successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelCreateDomainGlue'
+        400:
+          description: The request is understood, but it could not be processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        404:
+          description: The requested user does not exist or does not belong to authenticated
+            user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /domains/glue/{domain}/{host}:
+    delete:
+      tags:
+      - domain
+      - glue
+      summary: Deletes a glue record that is configured at the registry and is no longer needed. All requests to delete glue records that are still in use by a domain with the same TLD will fail until all associations are removed! 
+      operationId: deleteGlue
+      parameters:
+      - name: domain
+        in: path
+        required: true
+        description: Just the domain part of the nameserver FQDN.
+        schema:
+          type: string
+        example: example.com
+      - name: host
+        in: path
+        required: true
+        description: Just the hostname part of the nameserver FQDN. If glue record is for root of domain just specify '@'.
+        schema:
+          type: string
+        example: dns1
+      responses:
+        200:
+          description: The request to delete the glue record was made successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelDeleteGlue'
+        400:
+          description: The request is understood, but there was an error processing the request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        404:
+          description: The requested user does not exist or does not belong to authenticated
+            user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /domains/glue/{domain}/{host}/status:
+    get:
+      tags:
+      - domain
+      - glue
+      summary: Gets the status of a glue record at the registry to indicate if the glue record has been put in place by the registry
+      operationId: checkRegistryGlue
+      parameters:
+      - name: domain
+        in: path
+        required: true
+        description: Just the domain part of the nameserver FQDN
+        schema:
+          type: string
+        example: example.com
+      - name: host
+        in: path
+        required: true
+        description: Just the hostname part of the nameserver FQDN. If glue record is for root of domain just specify '@'.
+        schema:
+          type: string
+          example: dns1
+      responses:
+        200:
+          description: The request check the status of the glue record was made successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelCheckRegistryGlue'
+        400:
+          description: The request returned an error message from the registry. Possibly due to lack of glue support
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        404:
+          description: The requested user does not exist or does not belong to authenticated
+            user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /domains/ns/{domain}:
+    get:
+      tags:
+      - domain
+      - name server
+      summary: Returns the list of name servers currently assigned to the provided domain
+      operationId: getDomainNameservers
+      parameters:
+      - name: domain
+        in: path
+        required: true
+        description: The domain to get the nameservers for
+        schema:
+          type: string
+        example: example.com
+      responses:
+        200:
+          description: The request to return the name server list was made successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelDomainNameservers'
+        400:
+          description: The request returned an error message from the registry. Possibly due to lack of glue support
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        404:
+          description: The requested user does not exist or does not belong to authenticated
+            user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+    post:
+      tags:
+      - domain
+      - name server
+      summary: Updates the name servers assigned to the provided domain name
+      operationId: updateDomainNameservers
+      parameters:
+      - name: domain
+        in: path
+        required: true
+        description: The domain to update the nameservers for
+        schema:
+          type: string
+        example: example.com
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestModelDomainNameservers'
+      responses:
+        200:
+          description: The request check the status of the glue record was made successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelDomainNameservers'
+        400:
+          description: The request returned an error message from the registry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        404:
+          description: The requested user does not exist or does not belong to authenticated
+            user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /user:
+    get:
+      tags:
+      - user
+      - read
+      summary: Get details about a user
+      operationId: getUserInfo
+      responses:
+        200:
+          description: The request for user information was made successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelGetUserInfo'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ResultModelGetUserInfo'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ResultModelGetUserInfo'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        404:
+          description: The requested user does not exist or does not belong to authenticated
+            user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        409:
+          description: The requested resource already exists or can't be modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /users/{user}:
+    put:
+      tags:
+      - write
+      - user
+      - add
+      summary: Create a new user on the system using the provided user information and return the API credentials for the new user if successful
+      operationId: createUser
+      parameters:
+      - name: user
+        in: path
+        description: The username to create
+        required: true
+        example: "mynewuser123"
+        schema:
+          type: string
+      requestBody:
+        description: New user account information in JSON encoded format
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestModelCreateUserData'
+        required: true
+      responses:
+        201:
+          description: The requested new user resource was created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelCreateUser'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        409:
+          description: The requested resource already exists and can't be created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /users/{user}/info:
+    post:
+      tags:
+      - write
+      - user
+      summary: Update information about a user on the system
+      operationId: updateUserDS
+      parameters:
+        - name: user
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Updated user account information in JSON encoded format
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestModelUpdateUserData'
+        required: true
+      responses:
+        200:
+          description: The requested user was found on the system and the information
+            was updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelGetUserInfo'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /zones/async/ux/records/add/{domain}/{type}:
+    put:
+      tags:
+      - zone
+      - write
+      - add
+      - async
+      summary: Create a new record in a zone using async zone reloading
+      operationId: addUXZoneRec
+      parameters:
+      - name: domain
+        in: path
+        description: The associated domain name
+        required: true
+        schema:
+          type: string
+      - name: type
+        in: path
+        description: The type of resource record (RR) to create (i.e. A, CNAME, MX,
+          etc)
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: The contents of the resource record (RR) to create in JSON encoded
+          format
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestModelBasicBodyData'
+        required: true
+      responses:
+        201:
+          description: The requested resource was created successfully. Expected response
+            to a valid request
+          content: {}
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        409:
+          description: The requested resource already exists and can't be created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /zones/async/ux/records/{id}:
+    post:
+      tags:
+      - zone
+      - write
+      - async
+      summary: Modify an existing zone record using async zone reloading
+      operationId: modUXZoneRec
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the zone record to modify
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: The contents of the resource record (RR) to modify in JSON encoded
+          format
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestModelZoneBodyData'
+        required: true
+      responses:
+        200:
+          description: The requested modification to the zone record was made successfully and the zone has been queued for reload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelZoneRecordBody'
+        403:
+          description: The request is understood, but it has been refused
+          content: {}
+        409:
+          description: The requested resource already exists or can't be modified
+          content: {}
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /zones/records/add/{domain}/{type}:
+    put:
+      tags:
+      - zone
+      - write
+      summary: Create a new record in a zone
+      operationId: addZoneRec
+      parameters:
+      - name: domain
+        in: path
+        description: The associated domain name
+        required: true
+        schema:
+          type: string
+      - name: type
+        in: path
+        description: The type of resource record (RR) to create (i.e. A, CNAME, MX,
+          etc)
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: The contents of the resource record (RR) to create in JSON encoded
+          format
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestModelZoneBodyData'
+        required: true
+      responses:
+        201:
+          description: The requested resource was created successfully. Expected response
+            to a valid request
+          content: {}
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        409:
+          description: The requested resource already exists and can't be created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /zones/records/all/{domain}:
+    get:
+      tags:
+      - zone
+      - read
+      - list
+      summary: Get a listing of all available zone records for a domain
+      operationId: listZone
+      parameters:
+      - name: domain
+        in: path
+        description: The associated domain name
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelZoneList'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ResultModelZoneList'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ResultModelZoneList'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /zones/records/all/{domain}/search/{keyword}:
+    get:
+      tags:
+      - zone
+      - read
+      - list
+      - search
+      summary: Get a listing of all available zone records for a domain that match
+        the keyword string
+      operationId: searchZone
+      parameters:
+      - name: domain
+        in: path
+        description: The associated domain name
+        required: true
+        schema:
+          type: string
+      - name: keyword
+        in: path
+        description: The keyword or string to match against existing resource records
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelZoneList'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ResultModelZoneList'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ResultModelZoneList'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+  /zones/records/parsed/{domain}:
+    get:
+      tags:
+      - read
+      - zone
+      - list
+      - parsed
+      summary: Get the current zone records for a domain fully parsed like you would see them in the zonefile.
+      operationId: listParsedZone
+      parameters:
+      - name: domain
+        in: path
+        description: The domain name the zone records belong to.
+        required: true
+        example: example.com
+        schema:
+          type: string
+      responses:
+        200:
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelParsedZoneList'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+  /zones/records/soa/{domain}:
+    get:
+      tags:
+      - zone
+      - read
+      summary: Get the current SOA value for a zone
+      operationId: getZoneSOA
+      parameters:
+      - name: domain
+        in: path
+        description: The domain name to retrieve the SOA value for
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelZoneSOA'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ResultModelZoneSOA'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ResultModelZoneSOA'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /zones/records/{domain}/{id}:
+    delete:
+      tags:
+      - zone
+      - write
+      - delete
+      summary: Delete an existing zone record
+      operationId: delZoneRec
+      parameters:
+      - name: domain
+        in: path
+        description: The domain name that owns the zone record
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: The zone record ID to delete from the zone
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: The requested deletion of the zone record was made successfully
+          content: {}
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        409:
+          description: The requested resource already exists or can't be modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /zones/async/ux/records/{domain}/{id}:
+    delete:
+      tags:
+      - zone
+      - write
+      - delete
+      - async
+      summary: Delete an existing zone record using async zone reloading
+      operationId: delUXZoneRec
+      parameters:
+      - name: domain
+        in: path
+        description: The domain name that owns the zone record
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: The zone record ID to delete from the zone
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: The requested deletion of the zone record was made successfully
+          content: {}
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        409:
+          description: The requested resource already exists or can't be modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /zones/records/{id}:
+    post:
+      tags:
+      - zone
+      - write
+      summary: Modify an existing zone record
+      operationId: modZoneRec
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the zone record to modify
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: The contents of the resource record (RR) to create in JSON encoded
+          format
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestModelZoneBodyData'
+        required: true
+      responses:
+        200:
+          description: The requested modification to the zone record was made successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelZoneRecordBody'
+        403:
+          description: The request is understood, but it has been refused
+          content: {}
+        409:
+          description: The requested resource already exists or can't be modified
+          content: {}
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /zones/reload/{domain}/force:
+    get:
+      tags:
+      - zone
+      - reload
+      - write
+      - async
+      summary: Force regeneration of a zone immediately instead of allowing zone reloader
+        to handle it
+      operationId: forceZoneReload
+      parameters:
+      - name: domain
+        in: path
+        description: The domain name to force a zone reload for
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: The request to force zone regeneration was made successfully
+          content: {}
+        403:
+          description: The request is understood, but it has been refused
+          content: {}
+        409:
+          description: The requested resource already exists or can't be modified
+          content: {}
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /zones/geo/region/list:
+    get:
+      tags:
+      - zone
+      - geo
+      - list
+      summary: Get a paginated list of all geo region IDs available for geo records
+      operationId: listGeoRegions
+      parameters:
+      - name: start
+        in: query
+        description: The number of the record to start the page on when using paginated results
+        required: false
+        schema:
+          type: integer
+          example: 100
+      - name: max
+        in: query
+        description: The maximum number of the records to return when using paginated results
+        required: false
+        schema:
+          type: integer
+          example: 10
+      responses:
+        200:
+          description: The request was made successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelGeoList'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /mail/maps/{domain}:
+    parameters:
+      - name: domain
+        in: path
+        description: The domain name the mailmap belongs to
+        required: true
+        schema:
+          type: string
+          format: hostname
+    get:
+      tags:
+      - mail
+      - list
+      - read
+      summary: To get a listing of the existing mailmaps for a domain this API call can be used. This call will return all pertinent details about each mailmap created for the domain.
+      operationId: listMailmaps
+      responses:
+        200:
+          description: The request to list domain mailmaps was made successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResultModelMailmapList"
+        403:
+          description: The request is understood, but it has been refused
+          content: {}
+        409:
+          description: The requested resource already exists or can't be modified
+          content: {}
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+    put:
+      tags:
+      - mail
+      - add
+      - write
+      summary: This API call allows an API user to create a new mailmap for a domain on the easyDNS system
+      operationId: createMailmap
+      requestBody:
+        description: The contents of the mailmap to create in JSON encoded
+          format
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestModelMailmapCreate'
+      responses:
+        201:
+          description: The request to list domain mailmaps was made successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResultModelMailmapCreate"
+        403:
+          description: The request is understood, but it has been refused
+          content: {}
+        409:
+          description: The requested resource already exists or can't be modified
+          content: {}
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /mail/maps/{domain}/{mailmap_id}:
+    delete:
+      tags:
+      - mail
+      - delete
+      - write
+      summary: This API call allows you to delete an existing mailmap for a domain. To obtain the mailmap_id for a mailmap you should perform a request to list your mailmaps
+      operationId: deleteMailmap
+      parameters:
+      - name: domain
+        in: path
+        description: The domain name to create the mailmap under
+        required: true
+        schema:
+          type: string
+          format: hostname
+          example: "example.com"
+      - name: mailmap_id
+        in: path
+        description: The unique ID of the mailmap
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+          example: 1234
+      responses:
+        200:
+          description: The request to delete the mailmap was made successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResultModelMailmapDelete"
+        403:
+          description: The request is understood, but it has been refused
+          content: {}
+        409:
+          description: The requested resource already exists or can't be modified
+          content: {}
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /mail/maps/{domain}/{email}:
+    post:
+      tags:
+      - mail
+      - write
+      summary: This API call can be used to update the configuration of an existing mailmap for a domain. To update a mailmap you must provide all required parameters in the request. On a successful update the existing mailmap configuration will be replaced with the provided mailmap configuration in the request
+      operationId: updateMailmap
+      parameters:
+      - name: domain
+        in: path
+        description: The domain name the mailmap belongs to
+        required: true
+        schema:
+          type: string
+          format: hostname
+      - name: email
+        in: path
+        description: The email address of the mailmap to update
+        required: true
+        schema:
+          type: string
+          format: email
+      requestBody:
+        description: The contents that the mailmap should be updated to in JSON encoded format
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestModelMailmapCreate'
+      responses:
+        201:
+          description: The request to update the mailmap was made successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResultModelMailmapCreate"
+        403:
+          description: The request is understood, but it has been refused
+          content: {}
+        409:
+          description: The requested resource already exists or can't be modified
+          content: {}
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /services/{service_id}/description:
+    get:
+      tags:
+      - service
+      summary: Returns a description of the provided service
+      operationId: getServiceDescription
+      parameters:
+      - name: service_id
+        in: path
+        description: The service that the description is being requested for in request
+        required: true
+        schema:
+          type: integer
+          format: int32
+          example: 99
+      responses:
+        200:
+          description: The requested service information has been returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelServiceDescription'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /services/subscription/{subscription_id}/description:
+    get:
+      tags:
+      - service
+      summary: Returns a description of the service used by the provided subscription block
+      operationId: getSubscriptionServiceDescription
+      parameters:
+      - name: subscription_id
+        in: path
+        description: The subscription block ID to return the description for in request
+        required: true
+        schema:
+          type: integer
+          format: int32
+          example: 9001
+      responses:
+        200:
+          description: The requested service information for the provided subscription has been returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelSubscriptionDescription'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+      - easyapi_basic: []
+  /domains/service/check/{domain}:
+    post:
+      tags:
+      - service
+      summary: Returns availability and pricing information (including user discounts) for adding a domain to the system
+      operationId: getServicePricingForDomain
+      parameters:
+      - name: domain
+        in: path
+        required: true
+        description: The domain name to look up to get pricing info
+        schema:
+          type: string
+          example: example.com
+      requestBody:
+        description: Restrictions to apply to pricing lookup in JSON encoded format
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestModelPricingCheck'
+      responses:
+        200:
+          description: Pricing information returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultModelPricingCheck'
+        403:
+          description: The request is understood, but it has been refused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel'
+        420:
+          description: Enhance your calm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorModel420'
+        default:
+          description: unexpected error
+          content: {}
+      security:
+        - easyapi_basic: [ ]
+components:
+  schemas:
+    ResultModelDomainCreateData:
+      required:
+      - domain
+      - inv_id
+      - service
+      - term
+      - tld
+      type: object
+      properties:
+        domain:
+          type: string
+          format: hostname
+          description: The domain name processed as part of the request
+        term:
+          type: integer
+          description: The period (in years) to create the domain for on the system/registry (if applicable)
+          minimum: 1
+          maximum: 10
+        service:
+          type: integer
+          description: The service ID the domain was created as
+          minimum: 1
+        tld:
+          type: string
+        inv_id:
+          type: integer
+          description: The ID of the invoice that was created and processed to fullfill the request
+        currency:
+          type: string
+          description: The currency used to process the invoice
+          enum:
+          - CAD
+          - USD
+        user:
+          type: string
+    ResultModelDomainDeleteData:
+      required:
+      - domain
+      type: object
+      properties:
+        domain:
+          type: string
+          format: hostname
+          description: The domain that was deleted
+    ResultModelSetRegStatus:
+      type: object
+      properties:
+        msg:
+          type: string
+        tm:
+          type: integer
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultModelSetRegStatusItem'
+        status:
+          type: integer
+    ResultModelGetUserInfoData:
+      type: object
+      properties:
+        user:
+          type: string
+          description: The username of the returned user data
+          example: testuser123
+        first_name:
+          type: string
+          description: The first name of the user
+          example: Tyler
+        last_name:
+          type: string
+          description: The last name of the user
+          example: Durdin
+        org_name:
+          type: string
+          description: The organization of the user
+          example: easyDNS Technologies Inc
+        address1:
+          type: string
+          description: The address of the user
+          example: 123 Sesame St
+        address2:
+          type: string
+          example: Suite 4500
+        address3:
+          type: string
+          example: Room 4A
+        city:
+          type: string
+          description: The city of the address provided
+          example: Toronto
+        state:
+          type: string
+          description: The state/province code of the address
+          example: ON
+        country:
+          type: string
+          description: The 2-letter ISO country code of the address
+          example: CA
+        postal_code:
+          type: string
+          description: The zip/postal code of the address
+          example: 1B1 3X5
+        currency:
+          type: string
+          example: CAD
+          description: The default currency to use for the account
+          enum:
+          - CAD
+          - USD
+        phone:
+          type: string
+          format: "E.164"
+          example: "+1.4165358672"
+          description: Phone number that can be used to contact customer
+        cellphone:
+          type: string
+          format: "E.164"
+          example: "+1.4165358672"
+          description: Cellular number that can be used to contact customer
+        fax:
+          type: string
+          format: "E.164"
+          example: "+1.4165358672"
+          description: Fax number that can be used to contact customer
+        email:
+          type: string
+          example: test@example.com
+          format: email
+          description: Main contact email for user
+        email2:
+          type: string
+          example: test@example.com
+          format: email
+          description: Secondary contact email for user
+        notices_email:
+          type: string
+          example: test@example.com
+          format: email
+          description: The email address(es) where generic notices should be sent
+        public_email:
+          type: string
+          example: test@example.com
+          format: email
+          description: The email address(es) that can be made public for contacting the user
+        alerts_email:
+          type: string
+          example: test@example.com
+          format: email
+          description: The email address(es) where alert notice should be sent
+        url:
+          type: string
+          example: 'https://easydns.com/'
+          format: url
+          description: The URL associated with a user (Not currently used anywhere)
+        opt_out:
+          type: integer
+          format: int32
+          description: Has the user opted out of any non-essential communications
+          example: 0
+          enum:
+          - 0
+          - 1
+        beta:
+          type: integer
+          format: int32
+          description: Does the user access to BETA level features
+          example: 1
+          enum:
+          - 0
+          - 1
+          - 2
+    ResultModelGetUserInfo:
+      required:
+      - msg
+      - status
+      type: object
+      properties:
+        msg:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultModelGetUserInfoData'
+        status:
+          type: string
+    ResultModelDomainCreate:
+      required:
+      - msg
+      - status
+      type: object
+      properties:
+        msg:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultModelDomainCreateData'
+        status:
+          type: string
+    ResultModelZoneSOA:
+      required:
+      - domain
+      - soa
+      type: object
+      properties:
+        domain:
+          type: string
+        soa:
+          minimum: 1
+          type: integer
+    ResultModelZoneRecord:
+      required:
+      - domain
+      - host
+      - id
+      - rdata
+      - type
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 60898922
+        domain:
+          type: string
+          example: 'example.com'
+        host:
+          type: string
+          example: 'hosta'
+        ttl:
+          minimum: 3E+2
+          type: integer
+          example: 300
+        prio:
+          minimum: 0
+          type: integer
+          example: 0
+        geozone_id:
+          minimum: 0
+          type: integer
+          example: 0
+        type:
+          type: string
+          example: 'A'
+          enum:
+          - A
+          - AAAA
+          - AFSDB
+          - ANAME
+          - CAA
+          - CERT
+          - CNAME
+          - DYN
+          - MX
+          - NAPTR
+          - NS
+          - PTR
+          - SECONDARY
+          - SOA
+          - SPF
+          - SRV
+          - SSHFP
+          - STEALTH
+          - TLSA
+          - TXT
+          - URL
+          - URLHTTPS
+        rdata:
+          type: string
+          example: '1.2.3.4'
+        last_mod:
+          type: string
+          example: '2019-08-28 19:09:50'
+    ResultModelParsedZoneRecord:
+      required:
+      - domain
+      - host
+      - id
+      - rdata
+      - type
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Zone record unique ID. Records that parse to multiple zone records will share the same ID!
+          example: 123456
+        domain:
+          type: string
+          description: The domain name that contains the zone records
+          example: "example.com"
+        host:
+          type: string
+          description: The hostname of the record (without the domain name). '@' indicates the record is for the root of the zone.
+          example: "www"
+        ttl:
+          minimum: 3E+2
+          type: integer
+          description: (OPTIONAL) The Time-to-live (TTL) of the zone record. If not returned, assume the default.
+          example: 600
+          default: 600
+        prio:
+          minimum: 0
+          maximum: 100
+          type: integer
+          description: (OPTIONAL) The priority of the record. This is only required for records that include the prio field (such as MX).
+          default: 0
+          example: 0
+        geozone_id:
+          minimum: 0
+          type: integer
+          description: (OPTIONAL) The ID of the geolocation this record applies to.
+          default: 0
+        type:
+          type: string
+          description: "The zone record type of the record. PLEASE NOTE: Some record types are specific to easyDNS and may require translation on other providers."
+          example: "CNAME"
+          enum:
+          - A
+          - AAAA
+          - AFSDB
+          - ANAME
+          - CAA
+          - CERT
+          - CNAME
+          - DYN
+          - MX
+          - NAPTR
+          - NS
+          - PTR
+          - SECONDARY
+          - SOA
+          - SPF
+          - SRV
+          - SSHFP
+          - STEALTH
+          - TLSA
+          - TXT
+          - URL
+          - URLHTTPS
+        rdata:
+          type: string
+          description: The contents of the rdata for a zone record.
+          example: "example.com"
+        last_mod:
+          type: string
+          description: "The time this zone record was last updated."
+          example: "2020-02-07 18:12:29"
+        url:
+          type: string
+          description: "The original URL that a record uses as a target. This applies to custom records like URL/STEALTH."
+          example: "https://easydns.com/"
+        orig_rdata:
+          type: string
+          description: "The data originally stored in the rdata field for custom types and records containing keywords"
+          example: "LOCAL."
+    ResultModelZoneRecordBody:
+      required:
+      - msg
+      - tm
+      - data
+      - status
+      type: object
+      properties:
+        msg:
+          type: string
+          description: Successful result message
+          example: Record updated successfully.
+        tm:
+          type: integer
+          format: int64
+          description: The unix epoch timestamp of the request
+          example: 1565190937
+        data:
+          $ref: '#/components/schemas/ResultModelZoneRecord'
+        status:
+          type: integer
+          format: int64
+          description: The HTTP status code for the result
+          example: 201
+          default: 201
+          minimum: 200
+          maximum: 299
+    ResultModelGeoList:
+      required:
+      - msg
+      - tm
+      - data
+      - status
+      type: object
+      properties:
+        msg:
+          type: string
+          description: Successful result message
+          example: OK
+        tm:
+          type: integer
+          format: int64
+          description: The unix epoch timestamp of the request
+          example: 1565190937
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultModelGeoListData'
+        count:
+          type: integer
+          description: Number of records returned on page
+          example: 100
+        total:
+          type: integer
+          description: Total number of records on all pages
+          example: 1000
+        start:
+          type: integer
+          description: Index of record to start paginated results
+          example: 100
+        max:
+          type: integer
+          description: Maximum number of records to return per page
+          example: 100
+        status:
+          type: integer
+          format: int64
+          description: The HTTP status code for the result
+          example: 201
+          default: 201
+          minimum: 200
+          maximum: 299
+    ResultModelGeoListData:
+      required:
+      - id
+      - geo_code
+      - location
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: The numeric ID of the described geo region
+          example: 1
+          minimum: 1
+        geo_code:
+          type: string
+          description: The short name for the described geo region
+          example: 'NA East'
+        location:
+          type: string
+          description: Phyisical location of the described geo region
+          example: North America East
+    RequestModelBasicBodyData:
+      type: object
+    RequestModelZoneBodyData:
+      required:
+      - domain
+      - host
+      - type
+      - rdata
+      type: object
+      properties:
+        domain:
+          type: string
+          format: hostname
+          description: The domain (FQDN) the zone record belongs to
+          example: example.com
+        host:
+          type: string
+          format: hostname
+          description: The hostname (minus the domain) the zone record is for
+          example: test1
+        ttl:
+          type: integer
+          description: The TTL (time-to-live) value for the zone record
+          default: 600
+          minimum: 300
+          example: 3600
+        prio:
+          type: integer
+          description: The priority of the zone record (Only applicable to record types that require it such as MX records)
+          default: 0
+          minimum: 0
+          maximum: 100
+        type:
+          type: string
+          description: The record type (A, AAAA, CNAME, etc) to use for this zone record
+          example: A
+          enum:
+          - A
+          - AAAA
+          - AFSDB
+          - ANAME
+          - CAA
+          - CERT
+          - CNAME
+          - DYN
+          - MX
+          - NAPTR
+          - NS
+          - PTR
+          - SECONDARY
+          - SOA
+          - SPF
+          - SRV
+          - SSHFP
+          - STEALTH
+          - TLSA
+          - TXT
+          - URL
+          - URLHTTPS
+        rdata:
+          type: string
+          description: The rdata value to use for the zone record
+          example: 1.2.3.4
+        geozone_id:
+          type: integer
+          description: The ID of the geozone based on georegion that this record should apply to
+          minimum: 0
+          default: 0
+    ResultModelZoneList:
+      required:
+      - data
+      - msg
+      - status
+      - tm
+      type: object
+      properties:
+        msg:
+          type: string
+        status:
+          maximum: 2E+2
+          minimum: 2E+2
+          type: integer
+        tm:
+          type: integer
+        data:
+          $ref: '#/components/schemas/ResultModelZoneRecord'
+        count:
+          type: integer
+        total:
+          type: integer
+        start:
+          type: integer
+        max:
+          type: integer
+    ResultModelParsedZoneList:
+      required:
+      - data
+      - msg
+      - status
+      - tm
+      type: object
+      properties:
+        msg:
+          type: string
+          example: "OK"
+        status:
+          maximum: 2E+2
+          minimum: 2E+2
+          type: integer
+          example: 200
+        tm:
+          type: integer
+          example: 123456789
+        data:
+          $ref: '#/components/schemas/ResultModelParsedZoneRecord'
+        count:
+          type: integer
+          example: 1
+        total:
+          type: integer
+          example: 10
+        start:
+          type: integer
+          example: 1
+        max:
+          type: integer
+          example: 10
+    ResultModelDomainDelete:
+      required:
+      - msg
+      - status
+      type: object
+      properties:
+        msg:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultModelDomainDeleteData'
+        status:
+          type: string
+    ErrorModel:
+      required:
+      - msg
+      - status
+      type: object
+      properties:
+        msg:
+          type: string
+          description: Resulting error message for a failed request
+          example: Enhance your calm
+        status:
+          maximum: 5E+2
+          minimum: 4E+2
+          type: integer
+          description: The HTTP return code indicating the resulting status of the
+            request
+          example: 403
+    ErrorModel420:
+      required:
+      - error
+      type: object
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: integer
+              minimum: 420
+              maximum: 420
+              description: HTTP status code indicating error type returned
+              example: 420
+            message:
+              type: string
+              description: Resulting error message for a failed request indicating invalid/missing credentials sent with request or too many requests sent in too short a period of time
+              example: Enhance Your Calm. Rate limit exceeded (too many requests)
+    ResultModelSetRegStatusItem:
+      required:
+      - domain
+      type: object
+      properties:
+        domain:
+          type: string
+          description: The domain to change the regstatus on
+        reglock:
+          type: boolean
+          description: (OPTIONAL) The reglock setting provided by the user
+        renewal:
+          type: string
+          description: (OPTIONAL) The renew setting provided by the caller
+        change_lock:
+          type: boolean
+          description: (OPTIONAL) Set to true if a lock change was attempted
+        change_lock_failed:
+          type: boolean
+          description: (OPTIONAL) Set to true if a lock change was attempted but failed
+        change_renew:
+          type: boolean
+          description: (OPTIONAL) Set to true if a renewal action change was attempted
+        change_renew_failed:
+          type: boolean
+          description: (OPTIONAL) Set to true if a renewal action change was attempted
+            but failed
+        change_let_expire:
+          type: boolean
+          description: (OPTIONAL) Set to true if a let_expire change was attempted
+        change_let_expire_failed:
+          type: boolean
+          description: (OPTIONAL) Set to true if a let_expire change was attempted
+            but failed
+        connect_failed:
+          type: boolean
+          description: (OPTIONAL) Attempts to connect to the registry for this domain
+            failed
+        invalid_renewal_state:
+          type: boolean
+          description: (OPTIONAL) Based on the domain provided the renewal action
+            change was invalid. For example trying to set a .CA domain to expire
+    ResultModelDomainInfo:
+      required:
+      - msg
+      - tm
+      - data
+      - status
+      type: object
+      properties:
+        msg:
+          type: string
+          description: Successful result message
+          example: "OK"
+        tm:
+          type: integer
+          format: int64
+          description: The unix epoch timestamp of the request
+          example: 1565190937
+        data:
+          $ref: '#/components/schemas/ResultModelDomainInfoData'
+        status:
+          type: integer
+          format: int64
+          description: The HTTP status code for the result
+          example: 200
+          default: 200
+          minimum: 200
+          maximum: 299
+    ResultModelDomainInfoData:
+      required:
+      - domain
+      - exists
+      - expiry
+      - onsystem
+      - next_due
+      - service
+      type: object
+      properties:
+        id:
+          type: string
+          description: The exact identifier for domain. Almost always just the domain name
+          example: example.com
+        domain:
+          type: string
+          description: The domain name the returned information is associated with
+          example: example.com
+        exists:
+          type: string
+          description: Does the domain currently exist at the registry
+          example: "Y"
+        onsystem:
+          type: string
+          description: Does the domain currently exist on the system
+          example: "Y"
+        expiry:
+          type: string
+          description: Expiry date of the domain if it differs from the next_due date. Domains without registration will return a value of "false"
+          example: "2022-01-02"
+        next_due:
+          type: string
+          description: The date the service for the domain is next due
+          example: "2022-01-01"
+        cloned_to:
+          type: string
+          description: When cloning is enabled this will indicate the domain that is being cloned
+        service:
+          type: integer
+          description: The service ID that the domain is currently using
+          example: 3857
+        sub_block:
+          type: integer
+          description: Indicates the ID of the subscription block the domain is associated with when applicable
+          example: 1911
+    ResultModelRegStatus:
+      required:
+      - auto_renew
+      - expiry
+      - let_expire
+      - local_registrar
+      - reglock
+      - renewal
+      - supports_reglock
+      type: object
+      properties:
+        reglock:
+          type: boolean
+          description: Is reglock for domain set to on or off
+        renewal:
+          type: string
+          description: Indicates the current renewal action for the domain
+        auto_renew:
+          type: boolean
+          description: Does the domain have automated renewal payments set up for
+            this domain
+        auto_renew_card_id:
+          type: string
+          description: If a domain is set to auto_renew this field will contain the
+            stripe card id that will be used for this domain
+        let_expire:
+          type: boolean
+          description: Is the domain set to automatically expire at HRS/SRS
+        let_expire_failed:
+          type: boolean
+          description: This field is only present when attempts to get the let_expire
+            value at HRS/SRS failed. Most often caused by invalid authentication info
+            on the system for the domain
+        expiry:
+          type: string
+          description: The expiry date for the domain on the system. Either the expiry
+            date for the domain or the date service is next due
+        local_registrar:
+          type: boolean
+          description: Indicates if the domain is registered by us or the registrar
+            is someone else
+        supports_reglock:
+          type: boolean
+          description: Indicates if the TLD for this domain supports reglocking
+    RequestModelSetRegStatus:
+      required:
+      - domain
+      type: object
+      properties:
+        domain:
+          type: string
+          description: The domain name to update
+        reglock:
+          type: boolean
+          description: Turn on/off reglock at the registry
+        renewal:
+          type: string
+          description: Set renewal action of domain
+          enum:
+          - remind
+          - renew
+          - expire
+          example: renew
+    BodyDomainCreateDefault:
+      required:
+      - service
+      - term
+      - currency
+      type: object
+      properties:
+        service:
+          type: string
+          enum:
+          - lite
+          - dns
+          - pro
+          - enterprise
+        term:
+          type: integer
+          description: The term (in years) to create the domain for. If domain is being registered this is also the term it will be registered for
+        currency:
+          type: string
+          description: The currency to use when processing billing for the new domain
+          enum:
+          - CAD
+          - USD
+        dns_only:
+          type: integer
+          description: Should this domain be added for DNS service only (excluding registration)? Requests that do not set this value will attempt registration of the provided domain name
+          enum:
+          - 0
+          - 1
+          default: 0
+        premium:
+          type: integer
+          description: Is the domain considered premium by the registry and therefore has a custom cost
+          enum:
+          - 0
+          - 1
+          default: 0
+          example: 1
+        premium_price:
+          type: string
+          description: The premium verification price provided by the service price endpoint to confirm cost of domain (REQUIRED when premium=1)
+          example: "45.97"
+        nameservers:
+          type: array
+          minItems: 1
+          maxItems: 6
+          items:
+            type: string
+            format: hostname
+            example: "dns1.easydns.com"
+        portfolio:
+          type: string
+          description: The name of the portfolio to automatically assign this domain to when domain is created. The portfolio provided MUST already exist and originate from the same user as the user who will control the domain. *This parameter has been deprecated by the domain_group parameter.*
+          maxLength: 100
+          minLength: 2
+          example: "myshare"
+          deprecated: true
+        domain_group:
+          type: string
+          description: The name of the domain group to automatically assign this domain to when domain is created. The domain group provided MUST already exist and originate from the same user as the user who will control the domain
+          maxLength: 100
+          minLength: 2
+          example: "mygroup"
+        primary_ns:
+          type: string
+          description: The primary nameserver(s) to use when adding a new secondary domain to the system. Providing this value will cause the domain to be set to secondary automatically and the zone transfer process to start. Multiple masters should be separated by a semi-colon and no spaces (i.e. '1.2.3.4;5.6.7.8').
+          maxLength: 255
+          minLength: 7
+          format: ipaddress
+          example: "1.2.3.4"
+        contacts:
+          $ref: '#/components/schemas/ContactDataSet'
+        extra:
+          nullable: true
+          anyOf:
+          - $ref: '#/components/schemas/RegDataExtraBR'
+          - $ref: '#/components/schemas/RegDataExtraCAT'
+          - $ref: '#/components/schemas/RegDataExtraFR'
+          - $ref: '#/components/schemas/RegDataExtraIT'
+          - $ref: '#/components/schemas/RegDataExtraLAW'
+          - $ref: '#/components/schemas/RegDataExtraNU'
+          - $ref: '#/components/schemas/RegDataExtraPARIS'
+          - $ref: '#/components/schemas/RegDataExtraSE'
+          - $ref: '#/components/schemas/RegDataExtraSG'
+          - $ref: '#/components/schemas/RegDataExtraSX'
+          - $ref: '#/components/schemas/RegDataExtraUS'
+    BodyDomainCreateDNSOnly:
+      required:
+      - service
+      - term
+      - currency
+      - dns_only
+      type: object
+      properties:
+        service:
+          type: string
+          enum:
+          - lite
+          - dns
+          - pro
+          - enterprise
+        term:
+          type: integer
+          description: The term (in years) to create the domain for. If domain is being registered this is also the term it will be registered for
+        currency:
+          type: string
+          description: The currency to use when processing billing for the new domain
+          enum:
+          - CAD
+          - USD
+        dns_only:
+          type: integer
+          description: Should this domain be added for DNS service only (excluding registration)? Requests that do not set this value will attempt registration of the provided domain name
+          enum:
+          - 0
+          - 1
+        nameservers:
+          type: array
+          description: The nameservers to use when creating a domains NS records. If you are looking to set the primary NS for a secondary domain please use the primary_ns field
+          minItems: 1
+          maxItems: 6
+          items:
+            type: string
+            format: hostname
+            example: "dns1.easydns.com"
+        portfolio:
+          type: string
+          description: The name of the portfolio to automatically assign this domain to when domain is created. The portfolio provided MUST already exist and originate from the same user as the domain is being added to. *This parameter has been deprecated by the domain_group parameter.*
+          maxLength: 100
+          minLength: 2
+          example: "myshare"
+          deprecated: true
+        domain_group:
+          type: string
+          description: The name of the domain group to automatically assign this domain to when domain is created. The domain group provided MUST already exist and originate from the same user as the user who will control the domain
+          maxLength: 100
+          minLength: 2
+          example: "mygroup"
+        primary_ns:
+          type: string
+          description: The primary nameserver(s) to use when adding a new secondary domain to the system. Providing this value will cause the domain to be set to secondary automatically and the zone transfer process to start. Multiple masters should be separated by a semi-colon and no spaces (i.e. '1.2.3.4;5.6.7.8').
+          maxLength: 255
+          minLength: 7
+          format: ipaddress
+          example: "1.2.3.4"
+    ContactDataSet:
+      required:
+      - owner
+      type: object
+      properties:
+        owner:
+          $ref: '#/components/schemas/ContactDataOwner'
+        admin:
+          $ref: '#/components/schemas/ContactDataAdmin'
+        tech:
+          $ref: '#/components/schemas/ContactDataTech'
+        billing:
+          $ref: '#/components/schemas/ContactDataBilling'
+    ContactDataOwner:
+      required:
+      - first_name
+      - last_name
+      - address1
+      - city
+      - state
+      - country
+      - postal_code
+      - phone
+      - email
+      type: object
+      properties:
+        first_name:
+          type: string
+          example: "Jon"
+        last_name:
+          type: string
+          example: "Snow"
+        org_name:
+          type: string
+          description: Contact organization
+          example: "easyDNS Technologies Inc."
+        address1:
+          type: string
+          example: "123 Sesame St"
+        address2:
+          type: string
+          example: "Suite 2300"
+        city:
+          type: string
+          example: "Toronto"
+        state:
+          type: string
+          description: Province or state of contact
+          example:
+          - "ON"
+          - "CA"
+        country:
+          type: string
+          format: "ISO 3166-1"
+          description: 2 letter ISO country code
+          example:
+          - "CA"
+          - "US"
+        postal_code:
+          type: string
+          description: Postal code or zip code of contact
+          example:
+          - "A1A 1A1"
+          - "12345"
+        phone:
+          type: string
+          format: "E.164"
+          example: "+1.4165358672"
+        email:
+          type: string
+          format: email
+          example: "example@example.com"
+        language:
+          type: string
+          description: REQUIRED for .CA domain names
+          enum:
+          - en
+          - fr
+          default: "en"
+          example: "en"
+        cpr:
+          type: string
+          description: (.CA ONLY) The Canadian Presence Requirement type that this contact meets
+    
+    ContactDataAdmin:
+      required:
+      - first_name
+      - last_name
+      - address1
+      - city
+      - state
+      - country
+      - postal_code
+      - phone
+      - email
+      type: object
+      properties:
+        first_name:
+          type: string
+          example: "Jon"
+        last_name:
+          type: string
+          example: "Snow"
+        org_name:
+          type: string
+          description: Contact organization
+          example: "easyDNS Technologies Inc."
+        address1:
+          type: string
+          example: "123 Sesame St"
+        address2:
+          type: string
+          example: "Suite 2300"
+        city:
+          type: string
+          example: "Toronto"
+        state:
+          type: string
+          description: Province or state of contact
+          example:
+          - "ON"
+          - "CA"
+        country:
+          type: string
+          format: "ISO 3166-1"
+          description: 2 letter ISO country code
+          example:
+          - "CA"
+          - "US"
+        postal_code:
+          type: string
+          description: Postal code or zip code of contact
+          example:
+          - "A1A 1A1"
+          - "12345"
+        phone:
+          type: string
+          format: "E.164"
+          example: "+1.4165358672"
+        email:
+          type: string
+          format: email
+          example: "example@example.com"
+          
+    ContactDataTech:
+      required:
+      - first_name
+      - last_name
+      - address1
+      - city
+      - state
+      - country
+      - postal_code
+      - phone
+      - email
+      type: object
+      properties:
+        first_name:
+          type: string
+          example: "Jon"
+        last_name:
+          type: string
+          example: "Snow"
+        org_name:
+          type: string
+          description: Contact organization
+          example: "easyDNS Technologies Inc."
+        address1:
+          type: string
+          example: "123 Sesame St"
+        address2:
+          type: string
+          example: "Suite 2300"
+        city:
+          type: string
+          example: "Toronto"
+        state:
+          type: string
+          description: Province or state of contact
+          example:
+          - "ON"
+          - "CA"
+        country:
+          type: string
+          format: "ISO 3166-1"
+          description: 2 letter ISO country code
+          example:
+          - "CA"
+          - "US"
+        postal_code:
+          type: string
+          description: Postal code or zip code of contact
+          example:
+          - "A1A 1A1"
+          - "12345"
+        phone:
+          type: string
+          format: "E.164"
+          example: "+1.4165358672"
+        email:
+          type: string
+          format: email
+          example: "example@example.com"
+    ContactDataBilling:
+      required:
+      - first_name
+      - last_name
+      - address1
+      - city
+      - state
+      - country
+      - postal_code
+      - phone
+      - email
+      type: object
+      properties:
+        first_name:
+          type: string
+          example: "Jon"
+        last_name:
+          type: string
+          example: "Snow"
+        org_name:
+          type: string
+          description: Contact organization
+          example: "easyDNS Technologies Inc."
+        address1:
+          type: string
+          example: "123 Sesame St"
+        address2:
+          type: string
+          example: "Suite 2300"
+        city:
+          type: string
+          example: "Toronto"
+        state:
+          type: string
+          description: Province or state of contact
+          example:
+          - "ON"
+          - "CA"
+        country:
+          type: string
+          format: "ISO 3166-1"
+          description: 2 letter ISO country code
+          example:
+          - "CA"
+          - "US"
+        postal_code:
+          type: string
+          description: Postal code or zip code of contact
+          example:
+          - "A1A 1A1"
+          - "12345"
+        phone:
+          type: string
+          format: "E.164"
+          example: "+1.4165358672"
+        email:
+          type: string
+          format: email
+          example: "example@example.com"
+          
+    RegDataExtraBR:
+      required:
+      - br_register_number
+      type: object
+      description: Valid CPF/CNPJ Number
+      properties:
+        br_register_number:
+          type: string
+          minLength: 14
+          maxLength: 18
+    RegDataExtraCAT:
+      required:
+      - registrant_type
+      - intended_use
+      type: object
+      properties:
+        registrant_type:
+          type: string
+          enum:
+          - individual
+          - organization
+        intended_use:
+          type: string
+          maxLength: 255
+    RegDataExtraFR:
+      required:
+      - registrant_type
+      type: object
+      properties:
+        registrant_type:
+          type: string
+          description: Registrant type
+          enum:
+          - individual
+          - organization
+        date_of_birth:
+          type: string
+          format: date
+          description: Date of Birth
+          maxLength: 10
+          example: 1980-01-23
+        country_of_birth:
+          type: string
+          format: "ISO 3166-1"
+          description: Country of Birth (2 letter ISO country code)
+          maxLength: 2
+          example: fr
+        place_of_birth:
+          type: string
+          description: Place of Birth
+          maxLength: 64
+          example: Paris
+        postal_code_of_birth:
+          type: string
+          description: Postal Code of Birth
+          maxLength: 30
+        registrant_vat_id:
+          type: string
+          description: Value Added Tax (VAT) Number
+          maxLength: 64
+        siren_siret:
+          type: string
+          description: SIREN or SIRET Code
+          maxLength: 14
+        trademark_number:
+          type: string
+          description: Trademark Registration Number
+          maxLength: 60
+    RegDataExtraIT:
+      required:
+      - entity_type
+      - nationality_code
+      - reg_code
+      type: object
+      properties:
+        entity_type:
+          type: integer
+          minimum: 1
+          maximum: 7
+          description: Entity type
+        nationality_code:
+          type: string
+          format: "ISO 3166-1"
+          description: Nationality code (2 letter ISO country code)
+          minLength: 2
+          maxLength: 2
+          example: it
+        reg_code:
+          type: string
+          description: VAT or Codice Fiscale or n.a.
+          maxLength: 64
+    RegDataExtraLAW:
+      required:
+      - qli_accreditation_id
+      - qli_accreditation_body
+      - qli_jurisdiction_country
+      - qli_accreditation_year
+      type: object
+      properties:
+        qli_accreditation_id:
+          type: string
+          description: Qualified Lawyer's Accreditation ID
+          maxLength: 64
+        qli_accreditation_body:
+          type: string
+          description: Qualified Lawyer's Accreditation Body
+          maxLength: 300
+        qli_jurisdiction_country:
+          type: string
+          format: "ISO 3166-1"
+          description: Accreditation Jurisdiction Country (2 letter ISO country code)
+          minLength: 2
+          maxLength: 2
+          example: "US"
+        qli_jurisdiction_state:
+          type: string
+          description: Accreditation Jurisdiction State/Province
+          maxLength: 60
+          example: "CA"
+        qli_accreditation_year:
+          type: integer
+          description: Qualified Lawyer's Accreditation Year (20XX)
+          minimum: 1900
+          maximum: 3000
+          example: 2012
+    RegDataExtraNU:
+      required:
+      - registrant_type
+      - id_card_number
+      - registration_number
+      type: object
+      properties:
+        registrant_type:
+          type: string
+          enum:
+          - individual
+          - organization
+          description: Registrant type
+        id_card_number:
+          type: string
+          description: ID Card Number
+          maxLength: 64
+        registrant_vat_id:
+          type: string
+          description: Value Added Tax (VAT) number
+          maxLength: 64
+        registration_number:
+          type: string
+          description: Business number
+          maxLength: 64
+    RegDataExtraPARIS:
+      required:
+      - paris_nexus
+      properties:
+        paris_nexus:
+          type: string
+          enum:
+          - Resident of the Greater area of Paris
+          - Pursuing occupational, personal, business or cultural activities in the Greater area of Paris
+          - Directly or indirectly attached to the Greater area of Paris
+          description: Link to Paris community
+    RegDataExtraSE:
+      required:
+      - registrant_type
+      - id_card_number
+      - registration_number
+      properties:
+        registrant_type:
+          type: string
+          enum:
+          - individual
+          - organization
+          description: Registrant type
+        id_card_number:
+          type: string
+          description: ID Card Number
+          maxLength: 64
+        registrant_vat_id:
+          type: string
+          description: Value Added Tax (VAT) number
+          maxLength: 64
+        registration_number:
+          type: string
+          description: Business number
+          maxLength: 64
+    RegDataExtraSG:
+      type: object
+      properties:
+        registration_number:
+          type: string
+          description: Business number
+          maxLength: 64
+    RegDataExtraSX:
+      required:
+      - registrant_type
+      - id_card_number
+      - registration_number
+      properties:
+        registrant_type:
+          type: string
+          enum:
+          - individual
+          - organization
+          description: Registrant type
+        id_card_number:
+          type: string
+          description: ID Card Number
+          maxLength: 64
+        registrant_vat_id:
+          type: string
+          description: Value Added Tax (VAT) number
+          maxLength: 64
+        registration_number:
+          type: string
+          description: Business number
+          maxLength: 64
+    RegDataExtraUS:
+      required:
+      - app_purpose
+      - category
+      - validator
+      type: object
+      properties:
+        app_purpose:
+          type: string
+          description: Application purpose
+          enum:
+          - "P1"
+          - "P2"
+          - "P3"
+          - "P4"
+          - "P5"
+          example: "P3"
+        category:
+          type: string
+          description: Application category
+          enum:
+          - "C11"
+          - "C12"
+          - "C21"
+          - "C31"
+          - "C32"
+          example: "C11"
+        validator:
+          type: string
+          format: "ISO 3166-1"
+          description: Country of Citizenship (2 letter ISO country code)
+          example: "ca"
+    ResultModelUserDomainList:
+      required:
+      - msg
+      - status
+      - tm
+      - data
+      properties:
+        status:
+          maximum: 200
+          minimum: 200
+          type: integer
+          example: 200
+        tm:
+          type: integer
+          format: timestamp
+          description: The unix timestamp of the request
+          example: 1384974633
+        msg:
+          type: string
+          description: Processing result message related to response 
+          example: "OK"
+        data:
+          type: object
+          description: Response data related to request
+          required:
+          - user
+          properties:
+            user:
+              type: string
+              description: The user the domains are associated with
+              example: myusername
+            index:
+              type: array
+              description: An array of objects containing the domains
+              minItems: 0
+              items:
+                type: object
+                required:
+                - name
+                - link
+                properties:
+                  name:
+                    type: string
+                    description: The domain name
+                    example: example.com
+                  link:
+                    type: string
+                    description: The API endpoint URL for this domain
+                    example: https://rest.easydns.net/domain/example.com?format=json
+    RequestModelCreateUserData:
+      required:
+      - state
+      - country
+      - email
+      - currency
+      properties:
+        first_name:
+          type: string
+          description: First name of new user
+          maxLength: 64
+          example: "Jon"
+        last_name:
+          type: string
+          description: Last name of new user
+          maxLength: 64
+          example: "Snow"
+        org_name:
+          type: string
+          description: Organization of new user account
+          maxLength: 64
+          example: "easyDNS Technologies Inc"
+        address1:
+          type: string
+          description: Address of new user
+          maxLength: 64
+          example: "123 Sesame St"
+        address2:
+          type: string
+          description: Address of new user
+          maxLength: 64
+          example: "Suite 5300"
+        city:
+          type: string
+          description: City of the new user
+          maxLength: 64
+        state:
+          type: string
+          description: New users state/province (2 letter code)
+          maxLength: 2
+          minLength: 2
+          example: "ON"
+        country:
+          type: string
+          format: "ISO 3166-1"
+          description: New users country (2 letter ISO country code)
+          maxLength: 2
+          minLength: 2
+          example: "CA"
+        postal_code:
+          type: string
+          description: The postal/zip code of the new user account
+          maxLength: 32
+          example: "A1A 1A1"
+        phone:
+          type: string
+          format: "E.164"
+          description: Primary contact number for new user account
+          example: "+1.4165555555"
+        email:
+          type: string
+          format: email
+          description: Primary contact email for new user account
+          example: "support@easydns.com"
+        currency:
+          type: string
+          description: The default currency to use for the new user account. This is required to allow creation of domains for a new user without first logging in to control panel (account will still need to be funded first)
+          enum:
+          - CAD
+          - USD
+          example: "CAD"
+        password:
+          type: string
+          format: password
+          description: Use the provided password for the new user account. If not provided a random password will be created for user and returned as part of result
+        vcode:
+          type: string
+          description: Visitor code used during user creation
+          example: coupon1
+        remote_cc:
+          type: string
+          format: "ISO 3166-1"
+          description: Country code of originator of request (2 letter ISO country code)
+          maxLength: 3
+          example: "CA"
+        remote_ip:
+          type: string
+          format: ipaddress
+          description: IP address of originator of request
+          example: "1.2.3.4"
+          maxLength: 15
+        remote_host:
+          type: string
+          format: hostname
+          description: Hostname of originator of request
+          maxLength: 255
+          example: "somehost.example.com"
+    RequestModelUpdateUserData:
+      type: object
+      properties:
+        _encrypted:
+          type: integer
+          description: Indicates that the data of the packet has been encrypted before transmission and placed in the data field.
+          example: 1
+          enum:
+          - 0
+          - 1
+        data:
+          type: object
+          description: Data must be encrypted when sent in to a single data object.
+          properties:
+            first_name:
+              type: string
+              description: The first name of the user
+              example: Tyler
+            last_name:
+              type: string
+              description: The last name of the user
+              example: Durdin
+            org_name:
+              type: string
+              description: The organization of the user
+              example: easyDNS Technologies Inc
+            address1:
+              type: string
+              description: The address of the user
+              example: 123 Sesame St
+            address2:
+              type: string
+              example: Suite 4500
+            address3:
+              type: string
+              example: Room 4A
+            city:
+              type: string
+              description: The city of the address provided
+              example: Toronto
+            state:
+              type: string
+              description: The state/province code of the address
+              example: ON
+            country:
+              type: string
+              description: The 2-letter ISO country code of the address
+              example: CA
+            postal_code:
+              type: string
+              description: The zip/postal code of the address
+              example: 1B1 3X5
+            currency:
+              type: string
+              example: CAD
+              description: The default currency to use for the account
+              enum:
+              - CAD
+              - USD
+            phone:
+              type: string
+              format: "E.164"
+              example: "+1.4165358672"
+              description: Phone number that can be used to contact customer
+            cellphone:
+              type: string
+              format: "E.164"
+              example: "+1.4165358672"
+              description: Cellular number that can be used to contact customer
+            fax:
+              type: string
+              format: "E.164"
+              example: "+1.4165358672"
+              description: Fax number that can be used to contact customer
+            email:
+              type: string
+              example: test@example.com
+              format: email
+              description: Main contact email for user
+            email2:
+              type: string
+              example: test@example.com
+              format: email
+              description: Secondary contact email for user
+            notices_email:
+              type: string
+              example: test@example.com
+              format: email
+              description: The email address(es) where generic notices should be sent
+            public_email:
+              type: string
+              example: test@example.com
+              format: email
+              description: The email address(es) that can be made public for contacting the user
+            alerts_email:
+              type: string
+              example: test@example.com
+              format: email
+              description: The email address(es) where alert notice should be sent
+            url:
+              type: string
+              example: 'https://easydns.com/'
+              format: url
+              description: The URL associated with a user (Not currently used anywhere)
+            opt_out:
+              type: integer
+              format: int32
+              description: Has the user opted out of any non-essential communications
+              example: 0
+              enum:
+              - 0
+              - 1
+            beta:
+              type: integer
+              format: int32
+              description: Does the user access to BETA level features
+              example: 1
+              enum:
+              - 0
+              - 1
+              - 2
+            fraud:
+              type: string
+              description: Is the account currently marked as fraud
+              minLength: 1
+              maxLength: 1
+              default: N
+              example: N
+              enum:
+              - Y
+              - N
+            vip:
+              type: integer
+              format: int32
+              description: Is the user currently marked as a VIP user
+              example: 0
+              default: 0
+              enum:
+              - 0
+              - 1
+            password:
+              type: string
+              format: password
+              description: Provides a new password for the user that will replace the users current password
+              minLength: 8
+              maxLength: 32
+              example: xyz1234*#!
+            esm:
+              type: object
+              description: Enhanced Security Mode (ESM) user settings to update
+              properties:
+                keywords:
+                  type: array
+                  description: The new list of ESM keywords to set for the user
+                  minItems: 12
+                  maxItems: 12
+                  example: ["panda", "tester", "zodiac", "pasta", "pizza", "green", "great", "menace", "terror", "goat", "size", "tasty"]
+                  items:
+                    type: string
+                    example: justice
+                phone_code:
+                  type: string
+                  description: The new phone access code to set for the user
+                  minLength: 4
+                  maxLength: 4
+                  example: 0123
+    RequestPrimaryNSBody:
+      required:
+      - master
+      properties:
+        master:
+          type: string
+          description: Value to use as the primary NS or master for domain
+          minLength: 7
+          format: ipaddress
+          example: "1.2.3.4"
+    ResultSetPrimaryNS:
+      required:
+      - msg
+      - status
+      - data
+      properties:
+        msg:
+          type: string
+          description: Result message of request
+          example: "OK"
+        data:
+          type: object
+          required:
+          - domain
+          - master
+          properties:
+            domain:
+              type: string
+              description: The domain name that was updated
+              format: hostname
+              example: "example.com"
+            master:
+              type: string
+              description: The value for the primary NS that was used
+              format: ipaddress
+              minLength: 7
+              example: "1.2.3.4"
+        status:
+          type: integer
+          description: HTTP status code of result
+          minimum: 200
+          maximum: 200
+          example: 200
+          default: 200
+    RequestModelPricingCheck:
+      properties:
+        service:
+          type: string
+          description: Limit results to services that match the provided service code
+          enum:
+          - lite
+          - dns
+          - pro
+          - enterprise
+          example: dns
+        min_term:
+          type: integer
+          description: Only return matching services that support the provided minimum term (usually in years)
+          example: 2
+          default: 1
+        max_term:
+          type: integer
+          description: Only return matching services that support the provided minimum term (usually in years)
+          example: 2
+          default: 1
+    ResultModelCreateUser:
+      required:
+      - msg
+      - status
+      properties:
+        msg:
+          type: string
+          description: Result message of request
+          example: "OK"
+        data:
+          type: object
+          required:
+          - user
+          - currency
+          - state
+          - country
+          - email
+          - first_name
+          - last_name
+          - token
+          - key
+          properties:
+            user:
+              type: string
+            currency:
+              type: string
+              description: The default currency used for the new user account
+              enum:
+              - CAD
+              - USD
+              example: "CAD"
+            state:
+              type: string
+              description: New users state/province (2 letter code)
+              maxLength: 2
+              minLength: 2
+              example: "ON"
+            country:
+              type: string
+              format: "ISO 3166-1"
+              description: New users country (2 letter ISO country code)
+              maxLength: 2
+              minLength: 2
+              example: "CA"
+            email:
+              type: string
+              format: email
+              description: Primary contact email for new user account
+              example: "support@easydns.com"
+            postal_code:
+              type: string
+              description: The postal/zip code of the new user account
+              maxLength: 32
+              example: "A1A 1A1"
+            phone:
+              type: string
+              format: "E.164"
+              description: Primary contact number for new user account
+              example: "+1.4165555555"
+            first_name:
+              type: string
+              description: First name of new user
+              maxLength: 64
+              example: "Jon"
+            last_name:
+              type: string
+              description: Last name of new user
+              maxLength: 64
+              example: "Snow"
+            token:
+              type: string
+              description: API token value for the new user account. Required in combination with key to authenticate with API as new user.
+              maxLength: 250
+              example: "u52026fiu0ed37.29968jcj99"
+            key:
+              type: string
+              format: password
+              description: API key value for the new user account. Required in combination with token to authenticate with API as new user. This value should be kept secret.
+              maxLength: 128
+              example: "api5ca10c4f0ed07.29265933"
+        status:
+          type: integer
+          description: HTTP status code of result
+          minimum: 201
+          maximum: 201
+          example: 201
+          default: 201
+    ResultModelMailmapList:
+      required:
+      - status
+      - tm
+      properties:
+        status:
+          maximum: 200
+          minimum: 200
+          type: integer
+          example: 200
+        tm:
+          type: integer
+          format: timestamp
+          description: The unix timestamp the request was made
+        data:
+          type: object
+          required:
+          - domain
+          - mailmaps
+          properties:
+            domain:
+              type: string
+              format: hostname
+              description: Domain name the mailmaps below to
+              example: "example.com"
+            mailmaps:
+              type: array
+              description: List of mailmaps defined for a domain
+              items:
+                $ref: "#/components/schemas/ResultModelMailmapListItem"
+    ResultModelMailmapListItem:
+      required:
+      - active
+      - alias
+      - destination
+      - domain
+      - host
+      - last_modified
+      - mailmap_id
+      properties:
+        active:
+          type: integer
+          description: Status flag indicating if a mailmap is currently active
+          minimum: 0
+          maximum: 1
+          example: 1
+        alias:
+          type: string
+          format: email
+          description: The alias (or email address) of the mailmap
+          example: "example@example.com"
+        destination:
+          type: string
+          format: "email list"
+          description: A list of email addresses the mailmap forwards to
+          example: "abc@example.com, xyz@example.com"
+        domain:
+          type: string
+          format: hostname
+          description: The domain the mailmap belongs to
+          example: "example.com"
+        host:
+          type: string
+          format: hostname
+          description: The hostname of the mailmap relative to the domain name
+          example: "@"
+        last_modified:
+          type: string
+          format: date
+          description: The date the mailmap was last modified
+          example: "2013-11-20 13:43:56"
+        mailmap_id:
+          type: integer
+          description: The unique ID that identifies this mailmap
+          minimum: 1
+          example: 1234
+    ResultModelMailmapCreate:
+      required:
+      - status
+      - tm
+      - msg
+      - data
+      properties:
+        status:
+          maximum: 201
+          minimum: 201
+          type: integer
+          example: 201
+        tm:
+          type: integer
+          format: timestamp
+          description: The unix timestamp of the request
+          example: 1384974633
+        msg:
+          type: string
+          description: Processing result message related to response 
+          example: "OK"
+        data:
+          type: object
+          description: Response data related to request
+          required:
+          - domain
+          properties:
+            domain:
+              type: string
+              description: The domain the mailmap was created for
+              example: "example.com"
+    ResultModelMailmapDelete:
+      required:
+      - status
+      - tm
+      - msg
+      - data
+      properties:
+        status:
+          maximum: 200
+          minimum: 200
+          type: integer
+          example: 200
+        tm:
+          type: integer
+          format: timestamp
+          description: The unix timestamp of the request
+          example: 1384974633
+        msg:
+          type: string
+          description: Processing result message related to response 
+          example: "OK"
+        data:
+          type: object
+          description: Response data related to request
+          required:
+          - domain
+          - mailmap_id
+          properties:
+            domain:
+              type: string
+              description: The domain the mailmap was created for
+              example: "example.com"
+            mailmap_id:
+              type: integer
+              description: The unique ID of the deleted mailmap
+              example: 1234
+    RequestModelMailmapCreate:
+      required:
+      - alias
+      - host
+      - destination
+      - active
+      properties:
+        alias:
+          type: string
+          description: "Alias part of mailmap address (for example: 'test' from test@example.com)"
+          example: "test"
+        host:
+          type: string
+          description: "The hostname (without domain name) the mailmap should be created under"
+          example: "@"
+        destination:
+          type: string
+          description: The email address to forward the mailmaps emails to
+          example: "test@example.com"
+        active:
+          type: integer
+          description: Setting this to 0 will disable the mailmap from forwarding mail
+          example: 1
+          minimum: 0
+          maximum: 1
+    ResultModelServiceDescription:
+      required:
+      - status
+      - tm
+      - msg
+      - data
+      properties:
+        status:
+          maximum: 200
+          minimum: 200
+          type: integer
+          example: 200
+        tm:
+          type: integer
+          format: timestamp
+          description: The unix timestamp of the request
+          example: 1384974633
+        msg:
+          type: string
+          description: Processing result message related to response 
+          example: "OK"
+        data:
+          type: object
+          description: Response data related to request
+          required:
+          - service_id
+          - name
+          - period
+          - enterprise
+          - description
+          properties:
+            service_id:
+              type: integer
+              description: The ID of the service included in the request
+              example: 61
+            name:
+              type: string
+              description: The name of the service
+              example: "DNS Standard"
+            period:
+              type: integer
+              description: The term the service is active before requiring renewal. Almost always presented in months
+              example: 12
+            enterprise:
+              type: integer
+              description: Is the service an enterprise level service
+              enum:
+              - 0
+              - 1
+              example: 0
+            description:
+              type: string
+              description: A description of the service offering
+              example: "DNS Standard"
+    ResultModelSubscriptionDescription:
+      required:
+      - status
+      - tm
+      - msg
+      - data
+      properties:
+        status:
+          maximum: 200
+          minimum: 200
+          type: integer
+          example: 200
+        tm:
+          type: integer
+          format: timestamp
+          description: The unix timestamp of the request
+          example: 1384974633
+        msg:
+          type: string
+          description: Processing result message related to response 
+          example: "OK"
+        data:
+          type: object
+          description: Response data related to request
+          required:
+          - subscription_id
+          - name
+          - service_id
+          - period
+          - enterprise
+          - description
+          - size
+          properties:
+            subscription_id:
+              type: integer
+              description: The ID of the subscription block included in the request
+              example: 61
+            name:
+              type: string
+              description: The name of the service
+              example: "DNS Standard"
+            service_id:
+              type: integer
+              description: The ID of the service provided by the requested subscription block
+              example: 61
+            period:
+              type: integer
+              description: The term the subscription block is active before requiring renewal. Almost always presented in months
+              example: 12
+            enterprise:
+              type: integer
+              description: Is the service an enterprise level service
+              enum:
+              - 0
+              - 1
+              example: 0
+            description:
+              type: string
+              description: A description of the service offering
+              example: "DNS Standard"
+            size:
+              type: integer
+              description: The number of domains the subscription block supports
+              example: 10
+    ResultModelPricingCheck:
+      required:
+        - status
+        - tm
+        - msg
+        - data
+      properties:
+        status:
+          maximum: 200
+          minimum: 200
+          type: integer
+          example: 200
+        tm:
+          type: integer
+          format: timestamp
+          description: The unix timestamp of the request
+          example: 1384974633
+        msg:
+          type: string
+          description: Processing result message related to response
+          example: "OK"
+        data:
+          type: object
+          description: Response data related to request
+          required:
+          - domain
+          - avail
+          - tld
+          - services
+          properties:
+            domain:
+              type: string
+              format: hostname
+              description: The domain name to use to perform a price check
+            avail:
+              type: boolean
+              description: Is the domain currently available for registration
+              example: true
+              enum:
+                - true
+                - false
+            tld:
+              type: string
+              example: "com"
+            services:
+              type: array
+              minItems: 0
+              description: Listing of available services and pricing based on domain state and applicable services
+              items:
+                $ref: '#/components/schemas/ResultDataPricingCheck'
+    ResultDataPricingCheck:
+      required:
+      - id
+      - name
+      - code
+      - currency
+      - price
+      - isPremium
+      - pricePeriod
+      - pricePeriodName
+      - tax1
+      - tax2
+      - tax3
+      properties:
+        id:
+          type: integer
+          description: Service ID
+          example: 1234
+        name:
+          type: string
+          description: The service name
+          example: DNS Standard with .COM Registration
+        code:
+          type: string
+          description: The service code to use when registering the domain or adding the domain for DNS service
+          enum:
+            - lite
+            - dns
+            - pro
+            - enterprise
+          example: pro
+        currency:
+          type: string
+          description: The currency the price was returned in
+          example: "CAD"
+        price:
+          type: number
+          description: The price of the service in the indicated currency for the period
+          example: "47.43"
+        isPremium:
+          type: boolean
+          description: Indicates if the domain is premium and has special pricing for purchase
+          enum:
+          - true
+          - false
+          example: false
+        pricePeriod:
+          type: integer
+          description: The term of the returned service
+          example: 1
+        pricePeriodName:
+          type: string
+          description: The duration of the period for the pricePeriod
+          enum:
+          - "year"
+          - "month"
+          example: "year"
+        tax1:
+          type: number
+          description: Region specific tax amount #1
+          example: "2.37"
+        tax2:
+          type: number
+          description: Region specific tax amount #2
+          example: "2.37"
+        tax3:
+          type: number
+          description: Region specific tax amount #3
+          example: "2.37"
+    ResultModelGetDomainGlue:
+      required:
+      - status
+      - tm
+      - msg
+      - data
+      properties:
+        status:
+          maximum: 200
+          minimum: 200
+          type: integer
+          example: 200
+        tm:
+          type: integer
+          format: timestamp
+          description: The unix timestamp of the request
+          example: 1384974633
+        msg:
+          type: string
+          description: Processing result message related to response 
+          example: "OK"
+        data:
+          type: object
+          description: Response data related to request
+          required:
+          - domain
+          - total
+          - glue_records
+          properties:
+            domain:
+              type: string
+              format: hostname
+              description: The domain the glue records are provided by
+              example: "example.com"
+            total:
+              type: integer
+              description: Total number of glue records returned for domain
+              minimum: 0
+              example: 10
+            glue_records:
+              type: array
+              description: The list of glue records for a domain
+              minItems: 0
+              items:
+                $ref: '#/components/schemas/ResultModelGetDomainGlueItem'
+    ResultModelGetDomainGlueItem:
+      required:
+        - name
+        - domain
+      properties:
+        name:
+          type: string
+          format: hostname
+          description: The hostname that the glue record is defined for
+          example: "dns1.example.com"
+        domain:
+          type: string
+          format: fqdn
+          description: The domain the glue records are provided by
+          example: "example.com"
+        ipaddress:
+          type: string
+          format: ipaddress
+          description: The IPv4 address defined for this glue record if one is defined
+          example: "1.2.3.4"
+        ipv6:
+          type: string
+          format: ipv6
+          description: The IPv6 address defined for this glue record if one is defined
+          example: "::1"
+    RequestModelCreateDomainGlue:
+      required:
+      - nameserver_name
+      properties:
+        nameserver_name:
+          type: string
+          format: hostname
+          description: The hostname of the glue record being defined in FQDN format
+          example: "dns1.example.com"
+        ipaddress:
+          type: string
+          format: ipaddress
+          description: The IPv4 address to define for this glue record if one is provided
+          example: "1.2.3.4"
+        ipv6:
+          type: string
+          format: ipv6
+          description: The IPv6 address to define for this glue record if one is provided
+          example: "::1"
+    ResultModelCreateDomainGlue:
+      required:
+      - status
+      - tm
+      - msg
+      - data
+      properties:
+        status:
+          maximum: 200
+          minimum: 200
+          type: integer
+          example: 200
+        tm:
+          type: integer
+          format: timestamp
+          description: The unix timestamp of the request
+          example: 1384974633
+        msg:
+          type: string
+          description: Processing result message related to response 
+          example: "OK"
+        data:
+          type: object
+          description: Response data related to request
+          required:
+          - domain
+          - nameserver_name
+          properties:
+            domain:
+              type: string
+              format: fqdn
+              description: The domain the glue records are provided by
+              example: "example.com"
+            nameserver_name:
+              type: string
+              format: hostname
+              description: The hostname that the glue record is defined for
+              example: "dns1.example.com"
+            ipaddress:
+              type: string
+              format: ipaddress
+              description: The IPv4 address defined for this glue record if one is defined
+              example: "1.2.3.4"
+            ipv6:
+              type: string
+              format: ipv6
+              description: The IPv6 address defined for this glue record if one is defined
+              example: "::1"
+    ResultModelCheckRegistryGlue:
+      required:
+      - status
+      - tm
+      - msg
+      - data
+      properties:
+        status:
+          maximum: 200
+          minimum: 200
+          type: integer
+          example: 200
+        tm:
+          type: integer
+          format: timestamp
+          description: The unix timestamp of the request
+          example: 1384974633
+        msg:
+          type: string
+          description: Processing result message related to response 
+          example: "OK"
+        data:
+          type: object
+          description: Response data related to request
+          required:
+          - domain
+          - fqdn
+          - exists
+          properties:
+            domain:
+              type: string
+              format: fqdn
+              description: The domain the glue records are provided by
+              example: "example.com"
+            fqdn:
+              type: string
+              format: fqdn
+              description: The hostname for the glue record that was looked up
+              example: "dns1.example.com"
+            exists:
+              type: integer
+              description: Boolean integer that indicates if the glue is configured at the registry
+              example: 1
+              enum:
+              - 0
+              - 1
+    ResultModelDeleteGlue:
+      required:
+      - status
+      - tm
+      - msg
+      - data
+      properties:
+        status:
+          maximum: 200
+          minimum: 200
+          type: integer
+          example: 200
+        tm:
+          type: integer
+          format: timestamp
+          description: The unix timestamp of the request
+          example: 1384974633
+        msg:
+          type: string
+          description: Processing result message related to response 
+          example: "OK"
+        data:
+          type: object
+          description: Response data related to request
+          required:
+          - domain
+          - fqdn
+          properties:
+            domain:
+              type: string
+              format: fqdn
+              description: The domain the glue records are provided by
+              example: "example.com"
+            fqdn:
+              type: string
+              format: fqdn
+              description: The hostname for the glue record that was looked up
+              example: "dns1.example.com"
+    RequestModelDomainNameservers:
+      required:
+      - nameservers
+      properties:
+        nameservers:
+          type: array
+          description: The list of nameservers as FQDN
+          minItems: 2
+          maxItems: 10
+          items:
+            type: string
+            format: hostname
+            example: "dns1.example.com"
+    ResultModelDomainNameservers:
+      required:
+      - status
+      - tm
+      - msg
+      - data
+      properties:
+        status:
+          maximum: 200
+          minimum: 200
+          type: integer
+          example: 200
+        tm:
+          type: integer
+          format: timestamp
+          description: The unix timestamp of the request
+          example: 1384974633
+        msg:
+          type: string
+          description: Processing result message related to response 
+          example: "OK"
+        data:
+          type: object
+          description: Response data related to request
+          required:
+          - domain
+          - nameservers
+          properties:
+            domain:
+              type: string
+              format: fqdn
+              description: The domain the glue records are provided by
+              example: "example.com"
+            nameservers:
+              type: array
+              description: The list of nameservers assigned to the domain
+              minItems: 2
+              maxItems: 10
+              items:
+                type: string
+                format: hostname
+                example: "dns1.easydns.com"
+  securitySchemes:
+    easyapi_basic:
+      type: http
+      scheme: basic

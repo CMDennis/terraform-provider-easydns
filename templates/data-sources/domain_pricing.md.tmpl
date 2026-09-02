@@ -1,0 +1,31 @@
+---
+page_title: "easydns_domain_pricing Data Source - EasyDNS"
+description: |-
+  Reads domain availability and account-specific EasyDNS pricing.
+---
+
+
+# easydns_domain_pricing (Data Source)
+
+{{tffile "examples/data-sources/domain_pricing/example_1.tf"}}
+
+The EasyDNS endpoint uses `POST` because its filters are in a request body, but it is read-only. The provider classifies it explicitly as a read: rate-limit and transient server responses can receive bounded retries, and it is never reported as an ambiguous write.
+
+For premium registration, use the returned price to choose an explicit `easydns_domain.max_premium_price`; Terraform does not automatically convert a lookup into a billable registration. Review the registrar safety guide first.
+
+Prices and taxes are exposed as strings to preserve the API's exact decimal representation.
+
+## Arguments
+
+- `domain` (String, Required) Domain to check.
+- `service` (String, Optional) `lite`, `dns`, `pro`, or `enterprise`.
+- `min_term` (Number, Optional) Positive minimum supported term.
+- `max_term` (Number, Optional) Positive maximum supported term; cannot be less than `min_term`.
+
+## Read-only attributes
+
+- `available` (Boolean) Whether the domain is available for registration.
+- `tld` (String) Top-level label.
+- `services` (List) Available options, sorted by service ID and price period.
+
+Each `services` item has `id`, `name`, `code`, `currency`, exact `price`, `premium`, `price_period`, `price_period_name`, and exact `tax1`, `tax2`, and `tax3` values.

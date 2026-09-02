@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -30,14 +31,16 @@ type RecordResource struct {
 
 // RecordResourceModel describes the resource data model
 type RecordResourceModel struct {
-	ID      types.String `tfsdk:"id"`
-	Domain  types.String `tfsdk:"domain"`
-	Host    types.String `tfsdk:"host"`
-	Type    types.String `tfsdk:"type"`
-	Rdata   types.String `tfsdk:"rdata"`
-	TTL     types.Int64  `tfsdk:"ttl"`
-	Prio    types.Int64  `tfsdk:"prio"`
-	LastMod types.String `tfsdk:"last_mod"`
+	ID        types.String `tfsdk:"id"`
+	Domain    types.String `tfsdk:"domain"`
+	Host      types.String `tfsdk:"host"`
+	Type      types.String `tfsdk:"type"`
+	Rdata     types.String `tfsdk:"rdata"`
+	TTL       types.Int64  `tfsdk:"ttl"`
+	Prio      types.Int64  `tfsdk:"prio"`
+	GeozoneID types.Int64  `tfsdk:"geozone_id"`
+	WriteMode types.String `tfsdk:"write_mode"`
+	LastMod   types.String `tfsdk:"last_mod"`
 }
 
 // NewRecordResource creates a new record resource
@@ -94,6 +97,9 @@ func (r *RecordResource) Schema(ctx context.Context, req resource.SchemaRequest,
 				Optional:    true,
 				Computed:    true,
 				Default:     int64default.StaticInt64(600),
+				Validators: []validator.Int64{
+					TTLValidator(),
+				},
 			},
 			"prio": schema.Int64Attribute{
 				Description: "Priority for MX and SRV records (0-100).",
@@ -102,6 +108,22 @@ func (r *RecordResource) Schema(ctx context.Context, req resource.SchemaRequest,
 				Default:     int64default.StaticInt64(0),
 				Validators: []validator.Int64{
 					PriorityValidator(),
+				},
+			},
+			"geozone_id": schema.Int64Attribute{
+				Description: "EasyDNS geo-region ID for this record. Zero disables geographic targeting.",
+				Optional:    true,
+				Computed:    true,
+				Default:     int64default.StaticInt64(0),
+				Validators: []validator.Int64{
+					NonNegativeValidator("geozone_id"),
+				},
+			},
+			"write_mode": schema.StringAttribute{
+				Description: "Optional record-level mutation mode override: 'synchronous' or 'asynchronous'.",
+				Optional:    true,
+				Validators: []validator.String{
+					RecordWriteModeValidator(),
 				},
 			},
 			"last_mod": schema.StringAttribute{
@@ -138,15 +160,16 @@ func (r *RecordResource) Create(ctx context.Context, req resource.CreateRequest,
 	}
 
 	createReq := CreateRecordRequest{
-		Domain: plan.Domain.ValueString(),
-		Host:   plan.Host.ValueString(),
-		Type:   plan.Type.ValueString(),
-		Rdata:  plan.Rdata.ValueString(),
-		TTL:    plan.TTL.ValueInt64(),
-		Prio:   plan.Prio.ValueInt64(),
+		Domain:    plan.Domain.ValueString(),
+		Host:      plan.Host.ValueString(),
+		Type:      plan.Type.ValueString(),
+		Rdata:     plan.Rdata.ValueString(),
+		TTL:       plan.TTL.ValueInt64(),
+		Prio:      plan.Prio.ValueInt64(),
+		GeozoneID: plan.GeozoneID.ValueInt64(),
 	}
 
-	record, err := r.client.CreateRecord(createReq)
+	record, err := r.client.CreateRecordWithMode(ctx, createReq, r.writeMode(plan.WriteMode))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating DNS record",
@@ -156,8 +179,7 @@ func (r *RecordResource) Create(ctx context.Context, req resource.CreateRequest,
 	}
 
 	// Map response to state
-	plan.ID = types.StringValue(record.ID)
-	plan.LastMod = types.StringValue(record.LastMod)
+	applyRecordToResourceModel(&plan, record)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
@@ -170,10 +192,10 @@ func (r *RecordResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	record, err := r.client.GetRecord(state.Domain.ValueString(), state.ID.ValueString())
+	record, err := r.client.GetRecord(ctx, state.Domain.ValueString(), state.ID.ValueString())
 	if err != nil {
 		// If record not found, remove from state
-		if strings.Contains(err.Error(), "not found") {
+		if IsNotFound(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -184,15 +206,7 @@ func (r *RecordResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	// Map response to state
-	state.ID = types.StringValue(record.ID)
-	state.Domain = types.StringValue(record.Domain)
-	state.Host = types.StringValue(record.Host)
-	state.Type = types.StringValue(record.Type)
-	state.Rdata = types.StringValue(record.Rdata)
-	state.TTL = types.Int64Value(record.TTL)
-	state.Prio = types.Int64Value(record.Prio)
-	state.LastMod = types.StringValue(record.LastMod)
+	applyRecordToResourceModel(&state, record)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
@@ -208,15 +222,16 @@ func (r *RecordResource) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 
 	updateReq := CreateRecordRequest{
-		Domain: plan.Domain.ValueString(),
-		Host:   plan.Host.ValueString(),
-		Type:   plan.Type.ValueString(),
-		Rdata:  plan.Rdata.ValueString(),
-		TTL:    plan.TTL.ValueInt64(),
-		Prio:   plan.Prio.ValueInt64(),
+		Domain:    plan.Domain.ValueString(),
+		Host:      plan.Host.ValueString(),
+		Type:      plan.Type.ValueString(),
+		Rdata:     plan.Rdata.ValueString(),
+		TTL:       plan.TTL.ValueInt64(),
+		Prio:      plan.Prio.ValueInt64(),
+		GeozoneID: plan.GeozoneID.ValueInt64(),
 	}
 
-	record, err := r.client.UpdateRecord(state.ID.ValueString(), updateReq)
+	record, err := r.client.UpdateRecordWithMode(ctx, state.ID.ValueString(), updateReq, r.writeMode(plan.WriteMode))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating DNS record",
@@ -226,8 +241,7 @@ func (r *RecordResource) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 
 	// Map response to state
-	plan.ID = types.StringValue(record.ID)
-	plan.LastMod = types.StringValue(record.LastMod)
+	applyRecordToResourceModel(&plan, record)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
@@ -240,7 +254,7 @@ func (r *RecordResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
-	err := r.client.DeleteRecord(state.Domain.ValueString(), state.ID.ValueString())
+	err := r.client.DeleteRecordWithMode(ctx, state.Domain.ValueString(), state.ID.ValueString(), r.writeMode(state.WriteMode))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error deleting DNS record",
@@ -251,21 +265,68 @@ func (r *RecordResource) Delete(ctx context.Context, req resource.DeleteRequest,
 }
 
 func (r *RecordResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Import format: domain:record_id
-	parts := strings.Split(req.ID, ":")
-	if len(parts) != 2 {
+	domain, recordID, err := parseRecordImportID(req.ID)
+	if err != nil {
 		resp.Diagnostics.AddError(
 			"Invalid import ID",
-			"Import ID must be in the format 'domain:record_id' (e.g., 'example.com:12345')",
+			err.Error(),
 		)
 		return
 	}
 
-	domain := parts[0]
-	recordID := parts[1]
-
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("domain"), domain)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), recordID)...)
+}
+
+func (r *RecordResource) writeMode(value types.String) RecordWriteMode {
+	if value.IsNull() || value.IsUnknown() || value.ValueString() == "" {
+		return r.client.RecordWriteMode()
+	}
+	return RecordWriteMode(value.ValueString())
+}
+
+func applyRecordToResourceModel(model *RecordResourceModel, record *Record) {
+	domain, err := NormalizeDomain(record.Domain)
+	if err != nil {
+		domain = record.Domain
+	}
+	rdata, err := NormalizeRecordRdata(record.Type, record.Rdata)
+	if err != nil {
+		rdata = record.Rdata
+	}
+	desired := CreateRecordRequest{
+		Domain: model.Domain.ValueString(), Host: model.Host.ValueString(), Type: model.Type.ValueString(),
+		Rdata: model.Rdata.ValueString(), TTL: model.TTL.ValueInt64(), Prio: model.Prio.ValueInt64(), GeozoneID: model.GeozoneID.ValueInt64(),
+	}
+	if RecordsEquivalent(*record, desired) && !model.Rdata.IsNull() && !model.Rdata.IsUnknown() {
+		rdata = model.Rdata.ValueString()
+	}
+	model.ID = types.StringValue(record.ID)
+	model.Domain = types.StringValue(domain)
+	model.Host = types.StringValue(NormalizeHost(record.Host))
+	model.Type = types.StringValue(NormalizeRecordType(record.Type))
+	model.Rdata = types.StringValue(rdata)
+	model.TTL = types.Int64Value(record.TTL)
+	model.Prio = types.Int64Value(record.Prio)
+	model.GeozoneID = types.Int64Value(record.GeozoneID)
+	model.LastMod = types.StringValue(record.LastMod)
+}
+
+func parseRecordImportID(value string) (string, string, error) {
+	const expected = "Import ID must be in the form 'domain:record_id' with a positive numeric record ID."
+	if strings.TrimSpace(value) != value || strings.Count(value, ":") != 1 {
+		return "", "", fmt.Errorf("%s", expected)
+	}
+	parts := strings.SplitN(value, ":", 2)
+	domain, err := NormalizeDomain(parts[0])
+	if err != nil {
+		return "", "", fmt.Errorf("%s", expected)
+	}
+	recordID, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil || recordID <= 0 {
+		return "", "", fmt.Errorf("%s", expected)
+	}
+	return domain, strconv.FormatInt(recordID, 10), nil
 }
 
 func (r *RecordResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {

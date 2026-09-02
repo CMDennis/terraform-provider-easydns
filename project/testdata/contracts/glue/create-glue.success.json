@@ -1,0 +1,11 @@
+{
+  "status": 201,
+  "tm": 1788307200,
+  "msg": "OK",
+  "data": {
+    "domain": "example.invalid",
+    "nameserver_name": "ns1.example.invalid",
+    "ipaddress": "192.0.2.53",
+    "ipv6": "2001:db8::53"
+  }
+}

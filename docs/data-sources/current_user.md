@@ -1,0 +1,34 @@
+---
+page_title: "easydns_current_user Data Source - EasyDNS"
+description: |-
+  Reads metadata for the authenticated EasyDNS account.
+---
+
+
+# easydns_current_user (Data Source)
+
+```terraform
+data "easydns_current_user" "current" {}
+
+output "billing_currency" {
+  value = data.easydns_current_user.current.currency
+}
+```
+
+This data source has no arguments. It returns the authenticated account, not an arbitrary EasyDNS user.
+
+## Sensitive account data
+
+`id`, `user`, names, organization, all address fields, telephone/fax fields, email fields, and `url` are marked sensitive. Terraform will redact those values in normal CLI output, but **sensitive values are still stored in state**. Protect local and remote state, restrict backend access, and do not publish a state file as a build artifact.
+
+## Read-only attributes
+
+- `id`, `user` — authenticated username (Sensitive).
+- `first_name`, `last_name`, `organization` (Sensitive).
+- `address1`, `address2`, `address3`, `city`, `state`, `country`, `postal_code` (Sensitive).
+- `phone`, `cellphone`, `fax` (Sensitive).
+- `email`, `email2`, `notices_email`, `public_email`, `alerts_email` (Sensitive).
+- `url` (Sensitive).
+- `currency` — account default, normally `CAD` or `USD`.
+- `opt_out` — non-essential communication opt-out flag.
+- `beta` — beta-feature access level reported by EasyDNS.

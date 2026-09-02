@@ -1,0 +1,33 @@
+---
+page_title: "easydns_zone Resource - EasyDNS"
+description: |-
+  Manages a DNS zone in EasyDNS (import-only).
+---
+
+
+# easydns_zone (Resource)
+
+Manages a DNS zone in EasyDNS. This resource is **import-only** - zones must be created in the EasyDNS dashboard first, then imported into Terraform for tracking.
+
+~> **Note:** This resource cannot create new zones. Zones must exist in EasyDNS before they can be managed by Terraform.
+
+## Example Usage
+
+{{tffile "examples/resources/zone/example_1.tf"}}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+```shell
+terraform import easydns_zone.main example.com
+```
+
+## Behavior
+
+| Action | Behavior                                                                      |
+|--------|-------------------------------------------------------------------------------|
+| Create | Adopts an existing zone. Fails if the zone doesn't exist in EasyDNS.          |
+| Read   | Fetches current zone information from the API.                                |
+| Update | Not applicable - zone properties are read-only.                               |
+| Delete | Removes from Terraform state only. Does **not** delete the zone from EasyDNS. |

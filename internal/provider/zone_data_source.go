@@ -39,7 +39,8 @@ func (d *ZoneDataSource) Metadata(ctx context.Context, req datasource.MetadataRe
 
 func (d *ZoneDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Fetches information about a DNS zone from EasyDNS.",
+		Description:        "Fetches information about a DNS zone from EasyDNS.",
+		DeprecationMessage: "The easydns_zone data source is deprecated and will be removed in v2.0.0. Use the easydns_domain data source, which returns the same fields plus cloned_to and subscription_id.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The zone identifier.",
@@ -100,7 +101,7 @@ func (d *ZoneDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 
 	domain := config.Domain.ValueString()
 
-	zone, err := d.client.GetZone(domain)
+	zone, err := d.client.GetZone(ctx, domain)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reading zone",
@@ -109,9 +110,9 @@ func (d *ZoneDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		return
 	}
 
-	// Map to state
+	// Map to state. `domain` is a required argument and is deliberately left as
+	// configured; Terraform rejects a data source that alters its own arguments.
 	config.ID = types.StringValue(zone.ID)
-	config.Domain = types.StringValue(zone.Domain)
 	config.Exists = types.BoolValue(zone.Exists)
 	config.OnSystem = types.BoolValue(zone.OnSystem)
 	config.Expiry = types.StringValue(zone.Expiry)

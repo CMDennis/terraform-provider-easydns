@@ -1,0 +1,81 @@
+---
+page_title: "easydns_domain Resource - EasyDNS"
+description: |-
+  Adds a domain to EasyDNS for DNS-only service or, behind an explicit opt-in, registers it at the registry.
+---
+
+
+# easydns_domain (Resource)
+
+Adds a domain to the EasyDNS system. The resource has two modes:
+
+- **DNS-only** (`dns_only = true`, the default) adds the domain for DNS service without touching a registry.
+- **Registration** (`dns_only = false`) registers the domain at the registry. This is billable, cannot be undone by Terraform, and requires an explicit provider opt-in.
+
+### Both modes cost money
+
+`dns_only = true` avoids the *registry* fee, not every fee. EasyDNS invoices the DNS service itself, and `term` and `currency` are the billing inputs for that invoice. Creating a domain with an insufficient account balance fails with `Request cost (NN.NN) exceeds user balance amount (0.00)`.
+
+`dns_only = true` is also refused on the `lite` level, so the cheapest DNS-only option is `dns`. The provider rejects that combination during planning.
+
+Use the `easydns_domain_pricing` data source to see what a given domain and service level costs before applying. Sandbox observation for a `.com` at a one-year term: `lite` CAD 17.25, `dns` CAD 36.80, `pro` CAD 56.35, plus tax. There is no free service level.
+
+## DNS-only domain
+
+{{tffile "examples/resources/domain/example_1.tf"}}
+
+## Registering a domain
+
+Registration requires `enable_domain_registration = true` on the provider. Without it the plan fails before anything is billed.
+
+{{tffile "examples/resources/domain/example_2.tf"}}
+
+`admin`, `tech`, and `billing` contacts follow the same shape. Only `owner` accepts `language` and `cpr`, which .CA registrations require.
+
+### Premium domains
+
+A registry-priced premium domain needs three things: the `premium` acknowledgement, the `premium_price` returned by the EasyDNS pricing endpoint, and a `max_premium_price` ceiling this configuration accepts. A `premium_price` above the ceiling fails during planning rather than at the registry.
+
+{{tffile "examples/resources/domain/example_3.tf"}}
+
+Prices are compared as exact decimals, never as floating-point numbers.
+
+### TLD-specific registration fields
+
+Some TLDs require extra registrant data. Pass it through `extra`:
+
+{{tffile "examples/resources/domain/example_4.tf"}}
+
+Documented keys include `br_register_number` (.BR), `registrant_type` and `intended_use` (.CAT), `registrant_type` and birth details (.FR), `entity_type`, `nationality_code` and `reg_code` (.IT), the `qli_*` fields (.LAW), `registrant_type`, `id_card_number` and `registration_number` (.NU, .SE, .SX), `paris_nexus` (.PARIS), `registration_number` (.SG), and `app_purpose`, `category` and `validator` (.US).
+
+## Deleting a domain
+
+`deletion_protection` defaults to `true`. While it is on, `terraform destroy` fails with a diagnostic instead of deleting the domain. Terraform never silently drops the domain from state instead of deleting it.
+
+To delete a domain, set `deletion_protection = false`, apply that change, then destroy.
+
+## Immutable attributes
+
+`domain`, `service`, `term`, `currency`, and `dns_only` cannot be changed after creation. EasyDNS has no update operation for them, and Terraform will not delete and re-add a real domain to apply a change. Changing one produces a planning error naming the attribute. To move to a different configuration deliberately, remove the resource with `terraform state rm` and manage the new configuration explicitly.
+
+## Deleting can be accepted without taking effect
+
+~> **Deletion is unverified.** Against the EasyDNS sandbox it is accepted and then does not happen. Create, read and import are verified; see the [verification status guide](../guides/verification-status).
+
+EasyDNS has answered a domain delete with HTTP 200 and then continued to report the domain as on the system indefinitely, with its next-due date unchanged. When that happens the provider reports a diagnostic and **leaves the resource in state**, rather than treating the accepted delete as done. Removing it from state would abandon a domain that may still bill.
+
+If you see that diagnostic, check the domain in the EasyDNS dashboard; deletion may be queued or may require cancelling the service there.
+
+## Import
+
+```shell
+terraform import easydns_domain.example example.com
+```
+
+An imported domain always starts with `deletion_protection = true`.
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Sensitive data
+
+`contacts` and `extra` hold personal data and are marked sensitive, but Terraform still writes them to state in plain text. Use an encrypted, access-controlled state backend for any configuration that registers domains.

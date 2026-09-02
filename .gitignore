@@ -2,6 +2,8 @@
 terraform-provider-easydns
 terraform-provider-easydns_*
 registry.terraform.io/
+coverage.out
+dist/
 
 # Terraform
 *.tfstate
@@ -17,3 +19,6 @@ registry.terraform.io/
 
 # OS
 .DS_Store
+
+# Local editor and agent state
+.claude/

@@ -1,0 +1,23 @@
+---
+page_title: "easydns_set_primary_nameserver Action - EasyDNS"
+description: |-
+  Sets the primary server for an EasyDNS secondary-DNS domain.
+---
+
+
+# easydns_set_primary_nameserver (Action)
+
+Requires Terraform 1.14 or newer. This action sets the primary/master server address **and changes the domain to secondary DNS**.
+
+{{tffile "examples/actions/set_primary_nameserver/example_1.tf"}}
+
+Invoke it deliberately:
+
+```shell
+terraform plan -invoke=action.easydns_set_primary_nameserver.example
+terraform apply -invoke=action.easydns_set_primary_nameserver.example
+```
+
+This is an imperative state transition with no reliable refresh lifecycle. The provider sends exactly one request and never retries it. If the outcome is ambiguous, inspect the domain in EasyDNS before invoking the action again.
+
+{{ .SchemaMarkdown | trimspace }}

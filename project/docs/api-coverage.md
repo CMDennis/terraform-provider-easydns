@@ -1,0 +1,58 @@
+# EasyDNS API Coverage Matrix
+
+This file is generated from `api/coverage.csv` by
+`scripts/render-api-coverage.rb`. Edit the CSV, not this file.
+
+The pinned OpenAPI v1.1.1 document contains **36 operations**:
+34 complete, 0 partially implemented, 0 planned, and 2 explicitly excluded.
+
+| Method | Path | Operation | Terraform mapping | Mode | Target | Status | Notes |
+|---|---|---|---|---|---|---|---|
+| GET | `/domain/{domain}` | `getDomainInfo` | resource-read;data-source: easydns_domain; easydns_zone (compatibility) | n/a | v0.3.0 | complete | Domain data source and easydns_domain read; easydns_zone remains as a deprecated compatibility surface |
+| DELETE | `/domain/{domain}` | `deleteDomain` | resource-delete: easydns_domain | n/a | v0.3.0 | complete | Guarded by provider registration opt-in and resource deletion_protection; EasyDNS may answer 200 and keep reporting the domain, which is surfaced rather than treated as deleted |
+| PUT | `/domains/add/{domain}` | `createDomain` | resource-create: easydns_domain | n/a | v0.3.0 | complete | DNS-only and guarded registration modes; every service level is invoiced and dns_only is refused on lite, which the provider rejects during planning |
+| GET | `/domains/regstatus` | `getRegStatus` | resource-read;data-source: easydns_domain_registration_settings; easydns_domain_registration_statuses | n/a | v0.3.0 | complete | Observed shape nests the domain map under data.domains beside a user string; supports_reglock is omitted and auto_renew_card_id can be false. Decoding accepts that plus the three shapes the pinned contract suggested |
+| POST | `/domains/regstatus` | `setRegStatus` | resource-update: easydns_domain_registration_settings | n/a | v0.3.0 | complete | Body is the domain-keyed object from the contract example, not the array its schema describes, which EasyDNS refuses with HTTP 406; delete stops management and does not alter the remote policy |
+| POST | `/domains/primary_ns/{domain}` | `setPrimaryNS` | action: easydns_set_primary_nameserver | n/a | v1.0.0 | complete | Imperative state transition is issued exactly once; ambiguous outcomes require operator verification |
+| GET | `/domains/list/{user}` | `listUserDomains` | data-source: easydns_domains | n/a | v0.3.0 | complete | Entries are numerically keyed siblings of user rather than a documented index array; empty user resolved through /user because the path rejects a placeholder |
+| GET | `/domains/glue/{domain}` | `getDomainGlue` | resource-read;data-source: easydns_glue_record; easydns_glue_records | n/a | v0.3.0 | complete | Backs easydns_glue_records and the glue resource read, sorted by host |
+| PUT | `/domains/glue/{domain}` | `createGlue` | resource-create: easydns_glue_record | n/a | v0.3.0 | complete | Requires at least one IPv4 or IPv6 address and reconciles by reading the collection |
+| POST | `/domains/glue/{domain}` | `updateGlue` | resource-update: easydns_glue_record | n/a | v0.3.0 | complete | Replaces address information for a host and polls until the addresses match |
+| DELETE | `/domains/glue/{domain}/{host}` | `deleteGlue` | resource-delete: easydns_glue_record | n/a | v0.3.0 | complete | Registry refusal while the host is still referenced is surfaced, never retried |
+| GET | `/domains/glue/{domain}/{host}/status` | `checkRegistryGlue` | resource-read: easydns_glue_record | n/a | v0.3.0 | complete | Exposed as the computed registry_configured attribute; a read failure warns rather than failing the apply |
+| GET | `/domains/ns/{domain}` | `getDomainNameservers` | resource-read;data-source: easydns_domain_nameservers | n/a | v0.3.0 | complete | Nameservers modeled as a normalized sorted set; refused with HTTP 400 Authentication Error on the observed sandbox account |
+| POST | `/domains/ns/{domain}` | `updateDomainNameservers` | resource-update: easydns_domain_nameservers | n/a | v0.3.0 | complete | Create adopts the domain and applies the complete set; destroy leaves delegation in place |
+| GET | `/user` | `getUserInfo` | data-source: easydns_current_user | n/a | v0.3.0 | complete | All identity contact address phone email and URL fields are marked sensitive |
+| PUT | `/users/{user}` | `createUser` | excluded | n/a | post-v1 | excluded | No complete read/delete lifecycle and returned credentials would be stored in durable state |
+| POST | `/users/{user}/info` | `updateUserDS` | excluded | n/a | post-v1 | excluded | Encrypted request contract is underspecified and arbitrary-user refresh is unavailable |
+| PUT | `/zones/async/ux/records/add/{domain}/{type}` | `addUXZoneRec` | resource-create: easydns_record | asynchronous | v0.2.0 | complete | Pre-write ID snapshot and read reconciliation handle empty responses |
+| POST | `/zones/async/ux/records/{id}` | `modUXZoneRec` | resource-update: easydns_record | asynchronous | v0.2.0 | complete | Polls until the desired record is observable |
+| PUT | `/zones/records/add/{domain}/{type}` | `addZoneRec` | resource-create: easydns_record | synchronous | v0.2.0 | complete | Pre-write ID snapshot and read reconciliation handle empty responses |
+| GET | `/zones/records/all/{domain}` | `listZone` | resource-read;data-source: easydns_record; easydns_records | n/a | v0.2.0 | complete | Pagination stable numeric-ID ordering and scalar coercion implemented |
+| GET | `/zones/records/all/{domain}/search/{keyword}` | `searchZone` | data-source: easydns_records | n/a | v0.2.0 | complete | Optional search_keyword selects the escaped server-side search endpoint |
+| GET | `/zones/records/parsed/{domain}` | `listParsedZone` | data-source: easydns_parsed_records | n/a | v0.2.0 | complete | Exposes URL and original rdata fields with stable ordering |
+| GET | `/zones/records/soa/{domain}` | `getZoneSOA` | data-source: easydns_zone_soa | n/a | v0.2.0 | complete | Supports documented root and observed envelope-compatible shapes |
+| DELETE | `/zones/records/{domain}/{id}` | `delZoneRec` | resource-delete: easydns_record | synchronous | v0.2.0 | complete | Polls until the record ID is absent |
+| DELETE | `/zones/async/ux/records/{domain}/{id}` | `delUXZoneRec` | resource-delete: easydns_record | asynchronous | v0.2.0 | complete | Polls until absence after the queued reload |
+| POST | `/zones/records/{id}` | `modZoneRec` | resource-update: easydns_record | synchronous | v0.2.0 | complete | Reconciles the desired value after success or an ambiguous response |
+| GET | `/zones/reload/{domain}/force` | `forceZoneReload` | action: easydns_force_zone_reload | n/a | v1.0.0 | complete | Side-effecting GET is explicitly classified as a mutation and is never automatically retried |
+| GET | `/zones/geo/region/list` | `listGeoRegions` | data-source: easydns_geo_regions | n/a | v0.2.0 | complete | Follows start/max pagination and sorts by numeric region ID unless a caller requests one page |
+| GET | `/mail/maps/{domain}` | `listMailmaps` | resource-read;data-source: easydns_mailmap; easydns_mailmaps | n/a | v0.3.0 | complete | Collection nests under data.mailmaps and the key is absent entirely when a domain has none; resource read selects mailmap_id |
+| PUT | `/mail/maps/{domain}` | `createMailmap` | resource-create: easydns_mailmap | n/a | v0.3.0 | complete | One PUT followed by pre/post collection reconciliation; destinations compare without ordering drift |
+| DELETE | `/mail/maps/{domain}/{mailmap_id}` | `deleteMailmap` | resource-delete: easydns_mailmap | n/a | v0.3.0 | complete | One DELETE followed by absence polling; import retains the immutable numeric ID |
+| POST | `/mail/maps/{domain}/{email}` | `updateMailmap` | resource-update: easydns_mailmap | n/a | v0.3.0 | complete | Stored alias is fully qualified as alias@domain; sandbox returns HTTP 406 "context restrictions" for the update endpoint regardless of path form, while create and delete succeed |
+| GET | `/services/{service_id}/description` | `getServiceDescription` | data-source: easydns_service | n/a | v0.3.0 | complete | Read-only service metadata with flexible scalar decoding |
+| GET | `/services/subscription/{subscription_id}/description` | `getSubscriptionServiceDescription` | data-source: easydns_subscription_service | n/a | v0.3.0 | complete | Read-only subscription metadata with flexible scalar decoding |
+| POST | `/domains/service/check/{domain}` | `getServicePricingForDomain` | data-source: easydns_domain_pricing | n/a | v0.3.0 | complete | POST is explicitly classified read-only; bounded read retries apply and exact decimals are preserved as strings |
+
+## Modeling rules
+
+- Resources require a refreshable remote identity and meaningful lifecycle semantics.
+- Data sources model reads even when the HTTP method is POST, as with pricing.
+- Actions model imperative operations that cannot be represented as durable state.
+- Exclusions require an explicit lifecycle or security rationale.
+- The synchronous/asynchronous choice applies only to DNS-record create, update, and delete.
+
+## Maintenance
+
+Run `./scripts/validate-phase-0.sh` after updating the pinned OpenAPI document or the coverage CSV.

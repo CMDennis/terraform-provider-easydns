@@ -1,0 +1,16 @@
+{
+  "msg": "Record updated successfully.",
+  "tm": 1788307200,
+  "data": {
+    "id": "1001",
+    "domain": "example.invalid",
+    "host": "www",
+    "ttl": "600",
+    "prio": "0",
+    "geozone_id": null,
+    "type": "A",
+    "rdata": "192.0.2.20",
+    "last_mod": "2026-09-01 12:02:00"
+  },
+  "status": 200
+}

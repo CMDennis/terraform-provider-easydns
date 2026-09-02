@@ -1,0 +1,17 @@
+---
+page_title: "easydns_domain_nameservers Data Source - EasyDNS"
+description: |-
+  Fetches the nameservers currently delegated for a domain.
+---
+
+
+# easydns_domain_nameservers (Data Source)
+
+~> **Entirely unverified.** Reading a domain's delegation failed for every domain tried against the EasyDNS sandbox, with `HTTP 400: Error encountered attempting to retrieve name servers for domain: Authentication Error`. Because the read underpins everything here, no part of this construct has been exercised against a live API. This may behave correctly in production; see the [verification status guide](../guides/verification-status).
+
+
+{{tffile "examples/data-sources/domain_nameservers/example_1.tf"}}
+
+Nameservers are returned as a set of lower-case hostnames without a trailing dot. Order is not significant.
+
+{{ .SchemaMarkdown | trimspace }}

@@ -1,0 +1,16 @@
+---
+page_title: "easydns_record Data Source - EasyDNS"
+description: |-
+  Fetches a specific DNS record from EasyDNS.
+---
+
+
+# easydns_record (Data Source)
+
+Use this data source to retrieve one DNS record by domain, host, and type. The lookup returns an error if more than one record matches; use `easydns_records` to select a duplicate by ID.
+
+## Example Usage
+
+{{tffile "examples/data-sources/record/example_1.tf"}}
+
+{{ .SchemaMarkdown | trimspace }}

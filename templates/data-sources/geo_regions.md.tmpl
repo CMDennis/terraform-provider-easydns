@@ -1,0 +1,18 @@
+---
+page_title: "easydns_geo_regions Data Source - EasyDNS"
+description: |-
+  Fetches EasyDNS geo-region IDs for geographically targeted records.
+---
+
+
+# easydns_geo_regions (Data Source)
+
+Without pagination arguments, the provider follows every API page and sorts regions by numeric ID:
+
+{{tffile "examples/data-sources/geo_regions/example_1.tf"}}
+
+Set `start` or `max` to request one page:
+
+{{tffile "examples/data-sources/geo_regions/example_2.tf"}}
+
+{{ .SchemaMarkdown | trimspace }}

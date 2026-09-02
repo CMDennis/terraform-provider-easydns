@@ -1,0 +1,14 @@
+---
+page_title: "easydns_glue_records Data Source - EasyDNS"
+description: |-
+  Fetches every registry glue record a domain provides.
+---
+
+
+# easydns_glue_records (Data Source)
+
+{{tffile "examples/data-sources/glue_records/example_1.tf"}}
+
+Records are sorted by host. A domain with no glue returns an empty list rather than an error.
+
+{{ .SchemaMarkdown | trimspace }}

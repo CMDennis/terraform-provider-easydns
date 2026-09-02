@@ -1,5 +1,7 @@
 version: 2
 
+project_name: terraform-provider-easydns
+
 builds:
   - env:
       - CGO_ENABLED=0
@@ -23,7 +25,8 @@ builds:
     binary: '{{ .ProjectName }}_v{{ .Version }}'
 
 archives:
-  - format: zip
+  - formats:
+      - zip
     name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
 
 checksum:
@@ -42,6 +45,9 @@ signs:
       - "${artifact}"
 
 release:
+  github:
+    owner: CMDennis
+    name: terraform-provider-easydns
   draft: false
 
 changelog:

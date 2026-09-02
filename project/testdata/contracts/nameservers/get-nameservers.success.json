@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "tm": 1788307200,
+  "msg": "OK",
+  "data": {
+    "domain": "example.invalid",
+    "nameservers": [
+      "ns1.example.invalid",
+      "ns2.example.invalid"
+    ]
+  }
+}

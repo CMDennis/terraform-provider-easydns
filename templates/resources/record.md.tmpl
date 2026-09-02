@@ -1,0 +1,71 @@
+---
+page_title: "easydns_record Resource - EasyDNS"
+description: |-
+  Manages a DNS record in EasyDNS.
+---
+
+
+# easydns_record (Resource)
+
+Manages a DNS record in EasyDNS. Supports A, AAAA, CNAME, MX, TXT, NS, SRV, CAA, and other record types.
+
+Creates take a pre-write ID snapshot and select only a newly observed matching record. Updates and deletes poll by record ID until the desired state is observable. Mutations are never blindly retried after an uncertain response.
+
+## Example Usage
+
+### A Record
+
+{{tffile "examples/resources/record/example_1.tf"}}
+
+### CNAME Record
+
+{{tffile "examples/resources/record/example_2.tf"}}
+
+### MX Record
+
+{{tffile "examples/resources/record/example_3.tf"}}
+
+### TXT Record (SPF)
+
+{{tffile "examples/resources/record/example_4.tf"}}
+
+### AAAA Record (IPv6)
+
+{{tffile "examples/resources/record/example_5.tf"}}
+
+### Geo-targeted asynchronous record
+
+Use `easydns_geo_regions` to find region IDs:
+
+{{tffile "examples/resources/record/example_6.tf"}}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+Import existing records using the format `domain:record_id`:
+
+```shell
+terraform import easydns_record.web "example.com:12345678"
+```
+
+To find the record ID, use the `easydns_records` data source to list all records in a domain.
+
+Import IDs reject whitespace, extra delimiters, invalid domains, and non-numeric or non-positive record IDs. Domains are stored as lower-case IDNA ASCII without a trailing dot.
+
+## Validation
+
+The provider validates inputs:
+
+- **Hostname**: Must contain only valid DNS characters (letters, digits, hyphens, underscores, dots, `@`, `*`)
+- **IPv4 (A records)**: Must be a valid IPv4 address
+- **IPv6 (AAAA records)**: Must be a valid IPv6 address
+- **Priority**: Must be between 0 and 100
+- **TTL**: Must be at least 300 seconds
+- **Geo region**: Must be zero or greater
+
+## Supported record types
+
+`A`, `AAAA`, `AFSDB`, `ANAME`, `CAA`, `CERT`, `CNAME`, `DYN`, `MX`, `NAPTR`, `NS`, `PTR`, `SECONDARY`, `SOA`, `SPF`, `SRV`, `SSHFP`, `STEALTH`, `TLSA`, `TXT`, `URL`, and `URLHTTPS`.
+
+Domains, hosts, and record types are canonicalized. IPv4 and IPv6 values use canonical text. DNS-name targets compare case-insensitively with one optional trailing dot, while TXT, URL, and other opaque values retain exact content.

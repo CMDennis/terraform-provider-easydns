@@ -3,14 +3,22 @@
 package provider
 
 import (
-	"fmt"
+	"context"
 	"os"
+	"strconv"
 	"testing"
+	"time"
 )
 
-// Run with: EASYDNS_API_TOKEN=xxx EASYDNS_API_KEY=xxx go test -tags=integration -v ./internal/provider -run TestIntegration
+// Run read-only sandbox tests with:
+// TF_ACC=1 EASYDNS_ACC_SANDBOX=1 EASYDNS_API_TOKEN=xxx EASYDNS_API_KEY=xxx \
+//   EASYDNS_TEST_DOMAIN=example.invalid go test -tags=integration -v ./internal/provider -run TestIntegration
 
 func getTestClient(t *testing.T) *Client {
+	if os.Getenv("TF_ACC") == "" || os.Getenv("EASYDNS_ACC_SANDBOX") != "1" {
+		t.Skip("sandbox integration tests require TF_ACC and EASYDNS_ACC_SANDBOX=1")
+	}
+
 	token := os.Getenv("EASYDNS_API_TOKEN")
 	key := os.Getenv("EASYDNS_API_KEY")
 
@@ -18,16 +26,28 @@ func getTestClient(t *testing.T) *Client {
 		t.Skip("EASYDNS_API_TOKEN and EASYDNS_API_KEY must be set")
 	}
 
-	// Use sandbox by default, set EASYDNS_ENVIRONMENT=production for prod
-	baseURL := "https://sandbox.rest.easydns.net"
-	if os.Getenv("EASYDNS_ENVIRONMENT") == "production" {
-		baseURL = "https://rest.easydns.net"
+	baseURL := sandboxURL
+	if configuredURL := os.Getenv("EASYDNS_API_URL"); configuredURL != "" {
+		baseURL = configuredURL
+	}
+	baseURL, err := validateAcceptanceBaseURL(baseURL)
+	if err != nil {
+		t.Fatalf("unsafe acceptance-test configuration: %v", err)
 	}
 
-	// Check for async API setting
-	useAsyncAPI := os.Getenv("EASYDNS_USE_ASYNC_API") == "true" || os.Getenv("EASYDNS_USE_ASYNC_API") == "1"
+	writeMode := RecordWriteModeSynchronous
+	if configuredMode := os.Getenv("EASYDNS_RECORD_WRITE_MODE"); configuredMode != "" {
+		writeMode, err = parseRecordWriteMode(configuredMode)
+		if err != nil {
+			t.Fatalf("unsafe acceptance-test record mode: %v", err)
+		}
+	}
 
-	return NewClient(baseURL, token, key, useAsyncAPI)
+	client, err := NewClientWithMode(baseURL, token, key, writeMode)
+	if err != nil {
+		t.Fatalf("configure client: %v", err)
+	}
+	return client
 }
 
 func TestIntegrationGetZone(t *testing.T) {
@@ -39,18 +59,14 @@ func TestIntegrationGetZone(t *testing.T) {
 		t.Skip("EASYDNS_TEST_DOMAIN must be set")
 	}
 
-	zone, err := client.GetZone(domain)
+	zone, err := client.GetZone(context.Background(), domain)
 	if err != nil {
 		t.Fatalf("GetZone failed: %v", err)
 	}
 
-	fmt.Printf("Zone info for %s:\n", domain)
-	fmt.Printf("  ID:       %s\n", zone.ID)
-	fmt.Printf("  Domain:   %s\n", zone.Domain)
-	fmt.Printf("  Exists:   %v\n", zone.Exists)
-	fmt.Printf("  OnSystem: %v\n", zone.OnSystem)
-	fmt.Printf("  Expiry:   %s\n", zone.Expiry)
-	fmt.Printf("  Service:  %s\n", zone.Service)
+	if zone.Domain == "" || zone.ID == "" {
+		t.Fatalf("GetZone returned an incomplete zone identity")
+	}
 }
 
 func TestIntegrationGetRecords(t *testing.T) {
@@ -61,18 +77,23 @@ func TestIntegrationGetRecords(t *testing.T) {
 		t.Skip("EASYDNS_TEST_DOMAIN must be set")
 	}
 
-	records, err := client.GetRecords(domain)
+	records, err := client.GetRecords(context.Background(), domain)
 	if err != nil {
 		t.Fatalf("GetRecords failed: %v", err)
 	}
 
-	fmt.Printf("Found %d records for %s:\n", len(records), domain)
-	for _, r := range records {
-		fmt.Printf("  [%s] %s.%s -> %s (TTL: %d)\n", r.Type, r.Host, r.Domain, r.Rdata, r.TTL)
+	for _, record := range records {
+		if record.ID == "" {
+			t.Fatalf("GetRecords returned a record without an ID")
+		}
 	}
 }
 
 func TestIntegrationRecordCRUD(t *testing.T) {
+	if os.Getenv("EASYDNS_ACC_ALLOW_MUTATIONS") != "sandbox-writes-only" {
+		t.Skip("record mutation test requires EASYDNS_ACC_ALLOW_MUTATIONS=sandbox-writes-only")
+	}
+
 	client := getTestClient(t)
 
 	domain := os.Getenv("EASYDNS_TEST_DOMAIN")
@@ -80,43 +101,45 @@ func TestIntegrationRecordCRUD(t *testing.T) {
 		t.Skip("EASYDNS_TEST_DOMAIN must be set")
 	}
 
-	// Create a test record
+	host := "tfacc-" + strconv.FormatInt(time.Now().UnixNano(), 36)
 	createReq := CreateRecordRequest{
 		Domain: domain,
-		Host:   "tftest",
+		Host:   host,
 		Type:   "A",
 		Rdata:  "192.0.2.123",
 		TTL:    300,
 	}
 
-	fmt.Println("Creating test record...")
-	record, err := client.CreateRecord(createReq)
+	record, err := client.CreateRecord(context.Background(), createReq)
 	if err != nil {
 		t.Fatalf("CreateRecord failed: %v", err)
 	}
-	fmt.Printf("Created record: ID=%s, %s.%s -> %s\n", record.ID, record.Host, record.Domain, record.Rdata)
+	t.Cleanup(func() {
+		if err := client.DeleteRecord(context.Background(), domain, record.ID); err != nil && !IsNotFound(err) {
+			t.Errorf("cleanup record %s: %v", record.ID, err)
+		}
+	})
 
 	// Update the record
 	updateReq := CreateRecordRequest{
 		Domain: domain,
-		Host:   "tftest",
+		Host:   host,
 		Type:   "A",
 		Rdata:  "192.0.2.124",
 		TTL:    600,
 	}
 
-	fmt.Println("Updating test record...")
-	updated, err := client.UpdateRecord(record.ID, updateReq)
+	updated, err := client.UpdateRecord(context.Background(), record.ID, updateReq)
 	if err != nil {
 		t.Fatalf("UpdateRecord failed: %v", err)
 	}
-	fmt.Printf("Updated record: %s.%s -> %s (TTL: %d)\n", updated.Host, updated.Domain, updated.Rdata, updated.TTL)
+	if updated.Rdata != updateReq.Rdata || updated.TTL != updateReq.TTL {
+		t.Fatalf("updated record did not converge to the requested state")
+	}
 
 	// Delete the record
-	fmt.Println("Deleting test record...")
-	err = client.DeleteRecord(domain, record.ID)
+	err = client.DeleteRecord(context.Background(), domain, record.ID)
 	if err != nil {
 		t.Fatalf("DeleteRecord failed: %v", err)
 	}
-	fmt.Println("Record deleted successfully")
 }

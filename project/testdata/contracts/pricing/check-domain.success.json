@@ -1,0 +1,25 @@
+{
+  "status": 200,
+  "tm": 1788307200,
+  "msg": "OK",
+  "data": {
+    "domain": "example.invalid",
+    "avail": true,
+    "tld": "invalid",
+    "services": [
+      {
+        "id": 1234,
+        "name": "DNS service example",
+        "code": "dns",
+        "currency": "CAD",
+        "price": 47.43,
+        "isPremium": false,
+        "pricePeriod": 1,
+        "pricePeriodName": "year",
+        "tax1": 2.37,
+        "tax2": 0,
+        "tax3": 0
+      }
+    ]
+  }
+}

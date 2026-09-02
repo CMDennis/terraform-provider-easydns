@@ -1,0 +1,33 @@
+{
+  "msg": "OK",
+  "status": 200,
+  "tm": 1788307200,
+  "data": [
+    {
+      "id": "1001",
+      "domain": "example.invalid",
+      "host": "www",
+      "ttl": "300",
+      "prio": null,
+      "geozone_id": "0",
+      "type": "A",
+      "rdata": "192.0.2.10",
+      "last_mod": "2026-09-01 12:00:00"
+    },
+    {
+      "id": 1002,
+      "domain": "example.invalid",
+      "host": "@",
+      "ttl": 600,
+      "prio": 10,
+      "geozone_id": 0,
+      "type": "MX",
+      "rdata": "mail.example.invalid.",
+      "last_mod": "2026-09-01 12:01:00"
+    }
+  ],
+  "count": 2,
+  "total": 2,
+  "start": 0,
+  "max": 100
+}

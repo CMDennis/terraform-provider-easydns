@@ -1,0 +1,16 @@
+---
+page_title: "easydns_domain Data Source - EasyDNS"
+description: |-
+  Fetches the EasyDNS record of a domain on the system.
+---
+
+
+# easydns_domain (Data Source)
+
+{{tffile "examples/data-sources/domain/example_1.tf"}}
+
+This data source replaces the deprecated `easydns_zone` data source and returns the same fields plus `cloned_to` and `subscription_id`.
+
+A domain that is not on the EasyDNS system returns an error rather than an empty result, matching the convention that a singleton lookup must find its object.
+
+{{ .SchemaMarkdown | trimspace }}

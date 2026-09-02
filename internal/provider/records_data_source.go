@@ -19,19 +19,21 @@ type RecordsDataSource struct {
 
 // RecordsDataSourceModel describes the data source data model
 type RecordsDataSourceModel struct {
-	Domain  types.String  `tfsdk:"domain"`
-	Records []RecordModel `tfsdk:"records"`
+	Domain        types.String  `tfsdk:"domain"`
+	SearchKeyword types.String  `tfsdk:"search_keyword"`
+	Records       []RecordModel `tfsdk:"records"`
 }
 
 // RecordModel is the model for individual records in the list
 type RecordModel struct {
-	ID      types.String `tfsdk:"id"`
-	Host    types.String `tfsdk:"host"`
-	Type    types.String `tfsdk:"type"`
-	Rdata   types.String `tfsdk:"rdata"`
-	TTL     types.Int64  `tfsdk:"ttl"`
-	Prio    types.Int64  `tfsdk:"prio"`
-	LastMod types.String `tfsdk:"last_mod"`
+	ID        types.String `tfsdk:"id"`
+	Host      types.String `tfsdk:"host"`
+	Type      types.String `tfsdk:"type"`
+	Rdata     types.String `tfsdk:"rdata"`
+	TTL       types.Int64  `tfsdk:"ttl"`
+	Prio      types.Int64  `tfsdk:"prio"`
+	GeozoneID types.Int64  `tfsdk:"geozone_id"`
+	LastMod   types.String `tfsdk:"last_mod"`
 }
 
 // NewRecordsDataSource creates a new data source
@@ -50,6 +52,10 @@ func (d *RecordsDataSource) Schema(ctx context.Context, req datasource.SchemaReq
 			"domain": schema.StringAttribute{
 				Description: "The domain/zone to list records for (e.g., 'example.com').",
 				Required:    true,
+			},
+			"search_keyword": schema.StringAttribute{
+				Description: "Optional server-side keyword search across zone records.",
+				Optional:    true,
 			},
 			"records": schema.ListNestedAttribute{
 				Description: "List of DNS records in the domain.",
@@ -78,6 +84,10 @@ func (d *RecordsDataSource) Schema(ctx context.Context, req datasource.SchemaReq
 						},
 						"prio": schema.Int64Attribute{
 							Description: "Priority for MX and SRV records.",
+							Computed:    true,
+						},
+						"geozone_id": schema.Int64Attribute{
+							Description: "EasyDNS geo-region ID, or zero for a global record.",
 							Computed:    true,
 						},
 						"last_mod": schema.StringAttribute{
@@ -118,7 +128,13 @@ func (d *RecordsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 
 	domain := config.Domain.ValueString()
 
-	records, err := d.client.GetRecords(domain)
+	var records []Record
+	var err error
+	if !config.SearchKeyword.IsNull() && config.SearchKeyword.ValueString() != "" {
+		records, err = d.client.SearchRecords(ctx, domain, config.SearchKeyword.ValueString())
+	} else {
+		records, err = d.client.GetRecords(ctx, domain)
+	}
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reading DNS records",
@@ -131,13 +147,14 @@ func (d *RecordsDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	config.Records = make([]RecordModel, len(records))
 	for i, record := range records {
 		config.Records[i] = RecordModel{
-			ID:      types.StringValue(record.ID),
-			Host:    types.StringValue(record.Host),
-			Type:    types.StringValue(record.Type),
-			Rdata:   types.StringValue(record.Rdata),
-			TTL:     types.Int64Value(record.TTL),
-			Prio:    types.Int64Value(record.Prio),
-			LastMod: types.StringValue(record.LastMod),
+			ID:        types.StringValue(record.ID),
+			Host:      types.StringValue(record.Host),
+			Type:      types.StringValue(record.Type),
+			Rdata:     types.StringValue(record.Rdata),
+			TTL:       types.Int64Value(record.TTL),
+			Prio:      types.Int64Value(record.Prio),
+			GeozoneID: types.Int64Value(record.GeozoneID),
+			LastMod:   types.StringValue(record.LastMod),
 		}
 	}
 
