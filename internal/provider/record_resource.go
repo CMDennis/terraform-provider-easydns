@@ -285,14 +285,18 @@ func (r *RecordResource) ValidateConfig(ctx context.Context, req resource.Valida
 	rdata := config.Rdata.ValueString()
 
 	// Validate IP address format based on record type
+	// Note: EasyDNS has special values like "PARK" for parked domains
 	switch recordType {
 	case "A":
-		ip := net.ParseIP(rdata)
-		if ip == nil || ip.To4() == nil {
-			resp.Diagnostics.AddError(
-				"Invalid IPv4 Address",
-				fmt.Sprintf("A record rdata '%s' is not a valid IPv4 address.", rdata),
-			)
+		// Allow EasyDNS special values
+		if rdata != "PARK" {
+			ip := net.ParseIP(rdata)
+			if ip == nil || ip.To4() == nil {
+				resp.Diagnostics.AddError(
+					"Invalid IPv4 Address",
+					fmt.Sprintf("A record rdata '%s' is not a valid IPv4 address.", rdata),
+				)
+			}
 		}
 	case "AAAA":
 		ip := net.ParseIP(rdata)

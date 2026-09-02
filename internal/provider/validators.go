@@ -44,7 +44,8 @@ var priorityRecordTypes = map[string]bool{
 
 // hostnameRegex validates DNS hostname characters
 // Allows: letters, digits, hyphens, underscores, dots, and @ for root
-var hostnameRegex = regexp.MustCompile(`^(@|(\*\.)?[a-zA-Z0-9]([a-zA-Z0-9\-_]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-_]*[a-zA-Z0-9])?)*)$`)
+// Also allows underscore-prefixed labels for DMARC (_dmarc), DKIM (x._domainkey), etc.
+var hostnameRegex = regexp.MustCompile(`^(@|\*|(\*\.)?[a-zA-Z0-9_]([a-zA-Z0-9\-_]*)?(\.[a-zA-Z0-9_]([a-zA-Z0-9\-_]*)?)*)$`)
 
 // ============================================================================
 // Record Type Validator (Warning only)
