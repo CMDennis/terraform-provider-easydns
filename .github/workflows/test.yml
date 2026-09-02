@@ -72,10 +72,12 @@ jobs:
           go-version-file: 'go.mod'
           cache: true
 
+      # Run the same target developers run. The action installs a prebuilt
+      # golangci-lint, and a binary built with an older Go than this module
+      # targets refuses to load the config. Building it from the pinned
+      # toolchain keeps CI and local identical.
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          version: v2.8.0
+        run: make lint
 
       - name: Validate GitHub Actions workflows
         run: make actions-check
