@@ -13,8 +13,8 @@ description: |-
 The sandbox enforces the same limits as production: one request per second and
 500 requests per day, resetting at midnight EST. A full acceptance sweep can
 approach that ceiling, especially if any mutation reconciles slowly, so run one
-suite at a time rather than the whole matrix. The scheduled workflow runs only
-the read-only suite for this reason.
+suite at a time rather than the whole matrix. Sandbox suites are run manually;
+there is no scheduled or manually dispatched GitHub sandbox workflow.
 
 The acceptance suite therefore configures `record_poll_interval = "5s"`, which
 cuts the reads a slow reconcile can spend from 60 to 24. Override it with
@@ -123,10 +123,12 @@ go test -tags=acceptance -v ./internal/provider \
   -run '^TestAcc(ReadOnlyDomain|ZoneResourceAdoption)$'
 ```
 
-Use the GitHub Actions manual workflow for mutation suites. It separates
-records/mailmaps, registrar settings/delegation/glue, v0.1.1 migration, and
-domain lifecycle into protected environments. The domain lifecycle suite
-deletes its dedicated sandbox domain and must never receive a real domain.
+The local acceptance and integration suites remain available. Select the
+specific test with `-run` and set only that suite's opt-in environment variables,
+as documented in `internal/provider/framework_acceptance_test.go` and
+`internal/provider/integration_test.go`. Run them from a trusted local environment
+with sandbox credentials. The domain lifecycle suite deletes its dedicated
+sandbox domain and must never receive a real domain.
 
 ## Pull requests
 

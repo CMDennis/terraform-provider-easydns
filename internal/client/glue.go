@@ -134,8 +134,22 @@ func (c *Client) ListGlueRecords(ctx context.Context, domain string) ([]GlueReco
 	if err := c.doJSON(ctx, http.MethodGet, c.endpoint("domains", "glue", normalized), nil, &response, requestOptions{safeToRetry: true}); err != nil {
 		return nil, err
 	}
+	if err := validateReadEnvelope(response.Status, response.Data.GlueRecords != nil); err != nil {
+		return nil, err
+	}
+	if err := validateResponseDomain(response.Data.Domain, normalized); err != nil {
+		return nil, err
+	}
+	if response.Data.Total.Set && response.Data.Total.Value != int64(len(response.Data.GlueRecords)) {
+		return nil, fmt.Errorf("invalid EasyDNS glue collection total")
+	}
 	records := make([]GlueRecord, 0, len(response.Data.GlueRecords))
 	for _, item := range response.Data.GlueRecords {
+		if item.Domain != "" {
+			if err := validateResponseDomain(item.Domain, normalized); err != nil {
+				return nil, err
+			}
+		}
 		record, err := item.model(normalized)
 		if err != nil {
 			return nil, err

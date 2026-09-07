@@ -48,6 +48,20 @@ Some TLDs require extra registrant data. Pass it through `extra`:
 
 Documented keys include `br_register_number` (.BR), `registrant_type` and `intended_use` (.CAT), `registrant_type` and birth details (.FR), `entity_type`, `nationality_code` and `reg_code` (.IT), the `qli_*` fields (.LAW), `registrant_type`, `id_card_number` and `registration_number` (.NU, .SE, .SX), `paris_nexus` (.PARIS), `registration_number` (.SG), and `app_purpose`, `category` and `validator` (.US).
 
+## Creation confirmed, refresh pending
+
+After EasyDNS confirms creation, the provider saves the domain identity and
+configured deletion protection before polling for visibility. If read-back
+fails or times out, apply returns a warning with the saved identity. Computed
+details remain null until a successful refresh. This avoids marking a confirmed,
+potentially billable domain for automatic replacement.
+
+Restore API access and run `terraform plan` again. A pending domain stays in
+state if the API still cannot confirm it; do not remove its state or recreate
+it to retry the read. If state was lost, first verify the domain in EasyDNS,
+then import it using its domain name. A write whose outcome was never confirmed
+still returns an error and is never replayed by the provider.
+
 ## Deleting a domain
 
 `deletion_protection` defaults to `true`. While it is on, `terraform destroy` fails with a diagnostic instead of deleting the domain. Terraform never silently drops the domain from state instead of deleting it.

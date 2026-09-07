@@ -171,6 +171,18 @@ func (r *RecordResource) Create(ctx context.Context, req resource.CreateRequest,
 
 	record, err := r.client.CreateRecordWithMode(ctx, createReq, r.writeMode(plan.WriteMode))
 	if err != nil {
+		if record != nil && record.ID != "" {
+			// The write confirmed an identity; preserve the plan without
+			// claiming that read-back has verified the effective record values.
+			plan.ID = types.StringValue(record.ID)
+			plan.LastMod = types.StringNull()
+			resp.Diagnostics.Append(resp.State.Set(context.WithoutCancel(ctx), plan)...)
+			resp.Diagnostics.AddWarning("DNS record created; refresh pending",
+				fmt.Sprintf("EasyDNS returned record ID %s, but read-back failed: %s. Its identity was saved. "+
+					"Restore API access and run terraform plan again; do not recreate it or remove it from state. "+
+					"If state was lost, the import identity is %s:%s.", record.ID, err, createReq.Domain, record.ID))
+			return
+		}
 		resp.Diagnostics.AddError(
 			"Error creating DNS record",
 			fmt.Sprintf("Could not create record: %s", err),
@@ -195,7 +207,7 @@ func (r *RecordResource) Read(ctx context.Context, req resource.ReadRequest, res
 	record, err := r.client.GetRecord(ctx, state.Domain.ValueString(), state.ID.ValueString())
 	if err != nil {
 		// If record not found, remove from state
-		if IsNotFound(err) {
+		if IsNotFound(err) && !state.LastMod.IsNull() && !state.LastMod.IsUnknown() {
 			resp.State.RemoveResource(ctx)
 			return
 		}

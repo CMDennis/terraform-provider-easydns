@@ -55,12 +55,23 @@ func (c *Client) ListMailmaps(ctx context.Context, domain string) ([]Mailmap, er
 	if err := c.doJSON(ctx, http.MethodGet, c.endpoint("mail", "maps", normalized), nil, &response, requestOptions{safeToRetry: true}); err != nil {
 		return nil, err
 	}
+	if err := validateReadEnvelope(response.Status, response.Data.Mailmaps != nil); err != nil {
+		return nil, err
+	}
+	if err := validateResponseDomain(response.Data.Domain, normalized); err != nil {
+		return nil, err
+	}
 
 	result := make([]Mailmap, 0, len(response.Data.Mailmaps))
 	for _, item := range response.Data.Mailmaps {
+		if item.Domain != "" {
+			if err := validateResponseDomain(item.Domain, normalized); err != nil {
+				return nil, err
+			}
+		}
 		mailmap, err := item.model(normalized)
 		if err != nil {
-			return nil, err
+			return nil, safeDiagnostic("decode EasyDNS mailmap", err)
 		}
 		result = append(result, mailmap)
 	}
@@ -196,7 +207,7 @@ func normalizeDestinations(values []string) ([]string, error) {
 		value = strings.TrimSpace(value)
 		address, err := mail.ParseAddress(value)
 		if err != nil || address.Address != value {
-			return nil, fmt.Errorf("invalid mailmap destination %q", value)
+			return nil, fmt.Errorf("invalid mailmap destination address")
 		}
 		unique[value] = struct{}{}
 	}

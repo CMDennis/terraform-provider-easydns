@@ -29,8 +29,8 @@ type Domain struct {
 type apiDomainInfo struct {
 	ID       flexibleString `json:"id"`
 	Domain   string         `json:"domain"`
-	Exists   string         `json:"exists"`
-	OnSystem string         `json:"onsystem"`
+	Exists   flexibleBool   `json:"exists"`
+	OnSystem flexibleBool   `json:"onsystem"`
 	Expiry   nullableString `json:"expiry"`
 	NextDue  string         `json:"next_due"`
 	ClonedTo nullableString `json:"cloned_to"`
@@ -57,24 +57,13 @@ func (info apiDomainInfo) model(fallbackDomain string) Domain {
 	return Domain{
 		ID:             id,
 		Domain:         domain,
-		Exists:         isAffirmative(info.Exists),
-		OnSystem:       isAffirmative(info.OnSystem),
+		Exists:         info.Exists.Value,
+		OnSystem:       info.OnSystem.Value,
 		Expiry:         info.Expiry.Value,
 		NextDue:        info.NextDue,
 		ClonedTo:       info.ClonedTo.Value,
 		Service:        info.Service.Value,
 		SubscriptionID: info.SubBlock.Value,
-	}
-}
-
-// isAffirmative reads the API's "Y"/"N" flags. EasyDNS also returns these as
-// booleans and as 1/0 in places, so all three spellings are accepted.
-func isAffirmative(value string) bool {
-	switch value {
-	case "Y", "y", "yes", "YES", "true", "TRUE", "1":
-		return true
-	default:
-		return false
 	}
 }
 
@@ -87,8 +76,14 @@ func (c *Client) GetDomain(ctx context.Context, domain string) (*Domain, error) 
 	if err := c.doJSON(ctx, http.MethodGet, c.endpoint("domain", normalized), nil, &response, requestOptions{safeToRetry: true}); err != nil {
 		return nil, err
 	}
-	if response.Data == nil {
-		return nil, &NotFoundError{Resource: "domain", ID: normalized}
+	if err := validateReadEnvelope(response.Status, response.Data != nil); err != nil {
+		return nil, err
+	}
+	if err := validateResponseDomain(response.Data.Domain, normalized); err != nil {
+		return nil, err
+	}
+	if !response.Data.OnSystem.Set || !response.Data.Exists.Set {
+		return nil, fmt.Errorf("invalid EasyDNS domain response: missing presence flags")
 	}
 	result := response.Data.model(normalized)
 	// EasyDNS answers for a domain it does not host with an envelope whose
@@ -333,6 +328,9 @@ func (c *Client) CreateDomain(ctx context.Context, request CreateDomainRequest) 
 	}
 
 	created := response.Data[0]
+	if err := validateResponseDomain(created.Domain, normalized); err != nil {
+		return c.reconcileCreatedDomain(ctx, normalized, markAmbiguousWrite(http.MethodPut, requestOptions{}, err))
+	}
 	result := &DomainCreation{
 		Domain:    created.Domain,
 		Term:      created.Term.Value,
@@ -346,6 +344,25 @@ func (c *Client) CreateDomain(ctx context.Context, request CreateDomainRequest) 
 		result.Domain = normalized
 	}
 	return result, nil
+}
+
+// WaitForDomain polls visibility after a confirmed creation, without replaying
+// the billable request. The caller must retain the confirmed creation identity
+// even when this read fails or its context is canceled.
+func (c *Client) WaitForDomain(ctx context.Context, domain string) (*Domain, error) {
+	deadline := c.clock.Now().Add(c.recordReconcileTimeout)
+	for {
+		found, err := c.GetDomain(ctx, domain)
+		if err == nil {
+			return found, nil
+		}
+		if !IsNotFound(err) {
+			return nil, err
+		}
+		if err := c.waitForRecordPoll(ctx, deadline); err != nil {
+			return nil, reconciliationError("domain creation", c.recordReconcileTimeout, nil, err)
+		}
+	}
 }
 
 // reconcileCreatedDomain confirms an ambiguous or bodiless creation by reading

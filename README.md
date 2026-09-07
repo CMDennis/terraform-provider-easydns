@@ -96,12 +96,23 @@ provider "easydns" {
 | Sandbox | `https://sandbox.rest.easydns.net` |
 | Production | `https://rest.easydns.net` |
 
+Custom API URLs require HTTPS, with a literal loopback IP exception for local
+test servers. The client rejects all redirects. See the
+[security guide](docs/guides/security.md) for diagnostic redaction and state
+protection.
+
 ### Record write modes
 
 Synchronous writes request an immediate zone change. Asynchronous writes queue
 zone regeneration. Both modes use the same Terraform lifecycle and wait until
 the requested record is visible, updated, or absent. A write is issued only
 once; uncertain results are reconciled through reads.
+
+If EasyDNS returns a confirmed domain or record identity but read-back fails,
+the provider saves ownership and reports a refresh warning. Restore API access
+and run `terraform plan` again. See
+[creation recovery](docs/guides/troubleshooting.md#creation-confirmed-refresh-pending)
+before considering removal from state or another creation attempt.
 
 ```hcl
 provider "easydns" {

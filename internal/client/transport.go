@@ -3,6 +3,7 @@ package client
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -42,7 +43,7 @@ func (c *Client) doJSON(ctx context.Context, method string, endpoint *url.URL, b
 	if body != nil {
 		encoded, err := json.Marshal(body)
 		if err != nil {
-			return fmt.Errorf("encode EasyDNS request: %w", err)
+			return safeDiagnostic("encode EasyDNS request", err)
 		}
 		requestBody = encoded
 	}
@@ -64,7 +65,7 @@ func (c *Client) doJSON(ctx context.Context, method string, endpoint *url.URL, b
 
 		request, err := http.NewRequestWithContext(ctx, method, endpoint.String(), reader)
 		if err != nil {
-			return fmt.Errorf("create EasyDNS request: %w", err)
+			return safeDiagnostic("create EasyDNS request", err)
 		}
 		request.SetBasicAuth(c.token, c.key)
 		request.Header.Set("Accept", "application/json")
@@ -84,16 +85,16 @@ func (c *Client) doJSON(ctx context.Context, method string, endpoint *url.URL, b
 				}
 				continue
 			}
-			return markAmbiguousWrite(method, options, fmt.Errorf("send EasyDNS request: %w", err))
+			return markAmbiguousWrite(method, options, safeDiagnostic("send EasyDNS request", err))
 		}
 
 		responseBody, readErr := readLimited(response.Body, c.maxResponseBodyBytes)
 		closeErr := response.Body.Close()
 		if readErr != nil {
-			return markAmbiguousWrite(method, options, readErr)
+			return markAmbiguousWrite(method, options, safeDiagnostic("read EasyDNS response", readErr))
 		}
 		if closeErr != nil {
-			return markAmbiguousWrite(method, options, fmt.Errorf("close EasyDNS response: %w", closeErr))
+			return markAmbiguousWrite(method, options, safeDiagnostic("close EasyDNS response", closeErr))
 		}
 
 		if options.safeToRetry && attempt < attempts && isRetryableStatus(response.StatusCode) {
@@ -104,7 +105,7 @@ func (c *Client) doJSON(ctx context.Context, method string, endpoint *url.URL, b
 		}
 
 		if response.StatusCode < 200 || response.StatusCode >= 300 {
-			err := parseAPIError(response.StatusCode, responseBody)
+			err := c.safeAPIError(parseAPIError(response.StatusCode, responseBody), endpoint, body != nil)
 			if isAmbiguousMutationStatus(response.StatusCode) {
 				return markAmbiguousWrite(method, options, err)
 			}
@@ -112,7 +113,10 @@ func (c *Client) doJSON(ctx context.Context, method string, endpoint *url.URL, b
 		}
 
 		if err := errorFromSuccessEnvelope(response.StatusCode, responseBody); err != nil {
-			return err
+			if _, ok := err.(*APIError); !ok {
+				return markAmbiguousWrite(method, options, safeDiagnostic("decode EasyDNS response", err))
+			}
+			return c.safeAPIError(err, endpoint, body != nil)
 		}
 		if output == nil {
 			return nil
@@ -121,7 +125,7 @@ func (c *Client) doJSON(ctx context.Context, method string, endpoint *url.URL, b
 			return markAmbiguousWrite(method, options, ErrEmptyResponse)
 		}
 		if err := decodeJSON(responseBody, output); err != nil {
-			return markAmbiguousWrite(method, options, fmt.Errorf("decode EasyDNS response: %w", err))
+			return markAmbiguousWrite(method, options, safeDiagnostic("decode EasyDNS response", err))
 		}
 		return nil
 	}
@@ -158,7 +162,14 @@ func readLimited(reader io.Reader, limit int64) ([]byte, error) {
 func decodeJSON(data []byte, output any) error {
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.UseNumber()
-	return decoder.Decode(output)
+	if err := decoder.Decode(output); err != nil {
+		return err
+	}
+	var extra any
+	if err := decoder.Decode(&extra); err != io.EOF {
+		return errors.New("expected a single JSON value")
+	}
+	return nil
 }
 
 func errorFromSuccessEnvelope(httpStatus int, data []byte) error {
@@ -168,17 +179,17 @@ func errorFromSuccessEnvelope(httpStatus int, data []byte) error {
 
 	var envelope apiErrorEnvelope
 	if err := decodeJSON(data, &envelope); err != nil {
-		return nil
+		return err
 	}
 	if envelope.Error != nil {
 		return &APIError{
 			HTTPStatus: httpStatus,
 			Code:       envelope.Error.Code.Value,
-			Message:    sanitizeMessage(envelope.Error.Message),
+			Message:    envelope.Error.Message,
 		}
 	}
 	if envelope.Status.Set && envelope.Status.Value >= 400 {
-		return &APIError{HTTPStatus: httpStatus, Code: envelope.Status.Value, Message: sanitizeMessage(envelope.Msg)}
+		return &APIError{HTTPStatus: httpStatus, Code: envelope.Status.Value, Message: envelope.Msg}
 	}
 	return nil
 }
@@ -189,13 +200,62 @@ func parseAPIError(httpStatus int, data []byte) error {
 	if len(bytes.TrimSpace(data)) > 0 && decodeJSON(data, &envelope) == nil {
 		if envelope.Error != nil {
 			apiError.Code = envelope.Error.Code.Value
-			apiError.Message = sanitizeMessage(envelope.Error.Message)
+			apiError.Message = envelope.Error.Message
 		} else if envelope.Status.Set {
 			apiError.Code = envelope.Status.Value
-			apiError.Message = sanitizeMessage(envelope.Msg)
+			apiError.Message = envelope.Msg
 		}
 	}
 	return apiError
+}
+
+// Keep remote text out of diagnostics for requests carrying arbitrary payloads
+// and for account/contact/mail endpoints. On other reads, remove credentials
+// before truncating so a secret cannot be cut into an unredacted prefix.
+func (c *Client) safeAPIError(err error, endpoint *url.URL, hasBody bool) error {
+	apiError, ok := err.(*APIError)
+	if !ok {
+		return safeDiagnostic("read EasyDNS API error", err)
+	}
+	path := strings.TrimPrefix(endpoint.Path, c.baseURL.Path)
+	sensitive := hasBody || path == "/user" || strings.HasPrefix(path, "/user/") ||
+		strings.HasPrefix(path, "/mail/") || strings.HasPrefix(path, "/domains/add/") ||
+		strings.HasPrefix(path, "/domains/list/") || path == "/domains/regstatus"
+	if sensitive {
+		apiError.Message = ""
+		return apiError
+	}
+	authorization := base64.StdEncoding.EncodeToString([]byte(c.token + ":" + c.key))
+	message := strings.ReplaceAll(apiError.Message, authorization, "[REDACTED]")
+	// Replace the longer credential first in case one is a substring of the other.
+	credentials := []string{c.token, c.key}
+	if len(credentials[0]) < len(credentials[1]) {
+		credentials[0], credentials[1] = credentials[1], credentials[0]
+	}
+	for _, credential := range credentials {
+		if credential == "" {
+			continue
+		}
+		for _, form := range []string{url.QueryEscape(credential), url.PathEscape(credential), credential} {
+			message = strings.ReplaceAll(message, form, "[REDACTED]")
+		}
+	}
+	apiError.Message = sanitizeMessage(message)
+	return apiError
+}
+
+// Error causes remain available for errors.Is/As, but their text (which may
+// include URL paths, credentials, or rejected response values) is never rendered.
+type diagnosticError struct {
+	operation string
+	cause     error
+}
+
+func (err *diagnosticError) Error() string { return err.operation + " failed" }
+func (err *diagnosticError) Unwrap() error { return err.cause }
+
+func safeDiagnostic(operation string, cause error) error {
+	return &diagnosticError{operation: operation, cause: cause}
 }
 
 func sanitizeMessage(message string) string {
@@ -206,8 +266,9 @@ func sanitizeMessage(message string) string {
 		return character
 	}, strings.TrimSpace(message))
 	const maximumLength = 512
-	if len(message) > maximumLength {
-		message = message[:maximumLength] + "..."
+	characters := []rune(message)
+	if len(characters) > maximumLength {
+		message = string(characters[:maximumLength]) + "..."
 	}
 	return message
 }

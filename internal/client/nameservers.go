@@ -47,6 +47,12 @@ func (c *Client) GetDomainNameservers(ctx context.Context, domain string) ([]str
 	if err := c.doJSON(ctx, http.MethodGet, c.endpoint("domains", "ns", normalized), nil, &response, requestOptions{safeToRetry: true}); err != nil {
 		return nil, err
 	}
+	if err := validateReadEnvelope(response.Status, response.Data.Nameservers != nil); err != nil {
+		return nil, err
+	}
+	if err := validateResponseDomain(response.Data.Domain, normalized); err != nil {
+		return nil, err
+	}
 	return normalizeNameservers(response.Data.Nameservers)
 }
 

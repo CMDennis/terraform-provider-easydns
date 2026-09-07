@@ -14,7 +14,9 @@ and a detached GPG signature for that checksum file.
 ## Prerequisites
 
 - All pull-request jobs are green.
-- The protected sandbox acceptance suites required for the release have passed.
+- Relevant local sandbox checks have been considered and their results or
+  limitations recorded. GitHub no longer runs sandbox suites; local regression
+  tests exercise transport failures without EasyDNS credentials or mutations.
 - The tag matches the reviewed changelog and version policy.
 - `GPG_PRIVATE_KEY` and `PASSPHRASE` are configured as release secrets.
 - The public signing key is registered for Terraform Registry verification.

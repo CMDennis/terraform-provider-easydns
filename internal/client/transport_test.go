@@ -106,7 +106,8 @@ func TestHTTPErrorParsesStructuredMessageShape(t *testing.T) {
 	defer server.Close()
 	client := newTestClient(t, server.URL, server.Client(), RecordWriteModeSynchronous, nil)
 	err := client.doJSON(context.Background(), http.MethodPut, client.endpoint("test"), map[string]bool{"write": true}, nil, requestOptions{})
-	if err == nil || !strings.Contains(err.Error(), "record already exists") || IsAmbiguousWrite(err) {
+	var apiError *APIError
+	if !errors.As(err, &apiError) || apiError.HTTPStatus != 409 || apiError.Message != "" || IsAmbiguousWrite(err) {
 		t.Fatalf("error=%T %v", err, err)
 	}
 }

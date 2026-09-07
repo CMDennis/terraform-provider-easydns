@@ -106,7 +106,14 @@ func (c *Client) CreateRecordWithMode(ctx context.Context, record CreateRecordRe
 	if created != nil {
 		preferredID = created.ID
 	}
-	return c.reconcileCreatedRecord(ctx, normalized, beforeIDs, preferredID, writeErr)
+	reconciled, err := c.reconcileCreatedRecord(ctx, normalized, beforeIDs, preferredID, writeErr)
+	if err != nil && writeErr == nil && preferredID != "" {
+		// The ID is confirmed even when the subsequent read is unavailable.
+		// Returning it lets Terraform retain ownership without claiming that
+		// the record's effective values have been observed.
+		return created, err
+	}
+	return reconciled, err
 }
 
 func (c *Client) createRecordOnce(ctx context.Context, record CreateRecordRequest, mode RecordWriteMode) (*Record, error) {
@@ -139,6 +146,9 @@ func (c *Client) createRecordOnce(ctx context.Context, record CreateRecordReques
 	if response.Data == nil {
 		return nil, markAmbiguousWrite(http.MethodPut, requestOptions{}, ErrEmptyResponse)
 	}
+	if _, err := normalizePositiveID(response.Data.ID.Value, "record"); err != nil {
+		return nil, markAmbiguousWrite(http.MethodPut, requestOptions{}, fmt.Errorf("invalid EasyDNS record creation identity"))
+	}
 	result := response.Data.model()
 	return &result, nil
 }
@@ -148,7 +158,7 @@ func (c *Client) GetRecords(ctx context.Context, domain string) ([]Record, error
 	if err != nil {
 		return nil, err
 	}
-	return c.listRecords(ctx, c.endpoint("zones", "records", "all", normalized))
+	return c.listRecords(ctx, c.endpoint("zones", "records", "all", normalized), normalized)
 }
 
 func (c *Client) SearchRecords(ctx context.Context, domain, keyword string) ([]Record, error) {
@@ -159,10 +169,10 @@ func (c *Client) SearchRecords(ctx context.Context, domain, keyword string) ([]R
 	if keyword == "" {
 		return nil, fmt.Errorf("record search keyword cannot be empty")
 	}
-	return c.listRecords(ctx, c.endpoint("zones", "records", "all", normalized, "search", keyword))
+	return c.listRecords(ctx, c.endpoint("zones", "records", "all", normalized, "search", keyword), normalized)
 }
 
-func (c *Client) listRecords(ctx context.Context, endpoint *url.URL) ([]Record, error) {
+func (c *Client) listRecords(ctx context.Context, endpoint *url.URL, domain string) ([]Record, error) {
 	const maximumPages = 1000
 	allRecords := make([]Record, 0)
 	start := int64(0)
@@ -181,8 +191,22 @@ func (c *Client) listRecords(ctx context.Context, endpoint *url.URL) ([]Record, 
 		if err := c.doJSON(ctx, http.MethodGet, &pageEndpoint, nil, &response, requestOptions{safeToRetry: true}); err != nil {
 			return nil, err
 		}
+		if err := validateReadEnvelope(response.Status, response.Data != nil); err != nil {
+			return nil, err
+		}
+		if response.Count.Set && response.Count.Value != int64(len(response.Data)) ||
+			response.Start.Set && response.Start.Value != start ||
+			response.Total.Set && response.Total.Value < int64(len(allRecords)+len(response.Data)) {
+			return nil, fmt.Errorf("invalid EasyDNS records pagination metadata")
+		}
 
 		for _, apiRecord := range response.Data {
+			if err := validateResponseDomain(apiRecord.Domain, domain); err != nil {
+				return nil, err
+			}
+			if _, err := normalizePositiveID(apiRecord.ID.Value, "record"); err != nil || apiRecord.Host == "" || apiRecord.Type == "" {
+				return nil, fmt.Errorf("invalid EasyDNS record response: incomplete record identity")
+			}
 			allRecords = append(allRecords, apiRecord.model())
 		}
 

@@ -89,8 +89,7 @@ type regStatusCollection []RegistrationStatus
 func (collection *regStatusCollection) UnmarshalJSON(data []byte) error {
 	data = bytes.TrimSpace(data)
 	if len(data) == 0 || bytes.Equal(data, []byte("null")) {
-		*collection = nil
-		return nil
+		return fmt.Errorf("invalid EasyDNS registration status: null collection")
 	}
 
 	if data[0] == '[' {
@@ -100,6 +99,9 @@ func (collection *regStatusCollection) UnmarshalJSON(data []byte) error {
 		}
 		statuses := make(regStatusCollection, 0, len(entries))
 		for _, entry := range entries {
+			if err := entry.validate(entry.Domain); err != nil {
+				return err
+			}
 			statuses = append(statuses, entry.model(""))
 		}
 		*collection = statuses
@@ -127,24 +129,40 @@ func (collection *regStatusCollection) UnmarshalJSON(data []byte) error {
 		if err := decodeJSON(data, &single); err != nil {
 			return err
 		}
+		if err := single.validate(single.Domain); err != nil {
+			return err
+		}
 		*collection = regStatusCollection{single.model("")}
 		return nil
 	}
 
 	statuses := make(regStatusCollection, 0, len(keyed))
 	for domain, raw := range keyed {
-		// Scalar siblings such as "user" are envelope metadata, not domains.
 		if trimmed := bytes.TrimSpace(raw); len(trimmed) == 0 || trimmed[0] != '{' {
-			continue
+			return fmt.Errorf("invalid EasyDNS registration status: expected domain policy object")
 		}
 		var entry apiRegStatus
 		if err := decodeJSON(raw, &entry); err != nil {
+			return err
+		}
+		if err := entry.validate(domain); err != nil {
 			return err
 		}
 		statuses = append(statuses, entry.model(domain))
 	}
 	sort.SliceStable(statuses, func(left, right int) bool { return statuses[left].Domain < statuses[right].Domain })
 	*collection = statuses
+	return nil
+}
+
+func (status apiRegStatus) validate(domain string) error {
+	normalized, err := NormalizeDomain(domain)
+	if err != nil || !status.Reglock.Set || status.Renewal == "" {
+		return fmt.Errorf("invalid EasyDNS registration status: missing identity or policy")
+	}
+	if status.Domain != "" {
+		return validateResponseDomain(status.Domain, normalized)
+	}
 	return nil
 }
 
@@ -162,10 +180,13 @@ func (c *Client) ListRegistrationStatuses(ctx context.Context) ([]RegistrationSt
 	if err := c.doJSON(ctx, http.MethodGet, c.endpoint("domains", "regstatus"), nil, &response, requestOptions{safeToRetry: true}); err != nil {
 		return nil, err
 	}
+	if err := validateReadEnvelope(response.Status, response.Data != nil); err != nil {
+		return nil, err
+	}
 	statuses := make([]RegistrationStatus, 0, len(response.Data))
 	for _, status := range response.Data {
 		if status.Domain == "" {
-			continue
+			return nil, fmt.Errorf("invalid EasyDNS registration status: missing domain")
 		}
 		normalized, err := NormalizeDomain(status.Domain)
 		if err != nil {

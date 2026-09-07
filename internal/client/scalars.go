@@ -171,7 +171,7 @@ func (value *flexibleBool) UnmarshalJSON(data []byte) error {
 		switch text {
 		case "1", "Y", "y", "true", "TRUE", "yes", "YES":
 			value.Value = true
-		case "0", "N", "n", "false", "FALSE", "no", "NO", "":
+		case "0", "N", "n", "false", "FALSE", "no", "NO":
 			value.Value = false
 		default:
 			return fmt.Errorf("invalid boolean string %q", text)
@@ -187,6 +187,9 @@ func (value *flexibleBool) UnmarshalJSON(data []byte) error {
 	parsed, err := number.Int64()
 	if err != nil {
 		return fmt.Errorf("invalid boolean number %q: %w", number.String(), err)
+	}
+	if parsed != 0 && parsed != 1 {
+		return fmt.Errorf("boolean number must be 0 or 1")
 	}
 	value.Value = parsed != 0
 	value.Set = true

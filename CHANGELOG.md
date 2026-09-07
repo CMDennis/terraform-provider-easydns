@@ -3,6 +3,31 @@
 All notable changes will be documented here. Releases follow Semantic
 Versioning after v1.0.0.
 
+## v1.0.2
+
+### Security and reliability
+
+- Require HTTPS for API endpoints, with a literal loopback exception for local
+  test servers, and reject all redirects to prevent credential disclosure and
+  replay of mutation bodies.
+- Save confirmed domain and DNS record identities when read-back fails. Poll
+  domain visibility, retain deletion protection, and report a refresh warning
+  instead of tainting confirmed creations for replacement. Pending resources
+  remain in state when subsequent reads are unavailable.
+- Reject incomplete success envelopes, missing/null collections, invalid
+  presence flags, mismatched domain identities, and inconsistent collection
+  metadata instead of interpreting them as resource absence.
+- Redact configured credentials from structured read errors; suppress arbitrary
+  API text on sensitive endpoints and requests with bodies. Transport and decode
+  failures no longer echo remote values or URL paths into diagnostics.
+
+### Maintenance
+
+- Remove the GitHub sandbox acceptance workflow. Keep the manual local
+  acceptance and integration suites and their existing opt-in protections.
+- Add synthetic regression coverage and update security, recovery, testing,
+  and release documentation. No live EasyDNS tests are required by GitHub CI.
+
 ## v1.0.1
 
 Supersedes v1.0.0, which was withdrawn. A test fixture in the domain list

@@ -68,6 +68,28 @@ Records and mailmaps are polled to a stable lifecycle result. Glue exposes the
 separate computed `registry_configured` flag because publication can take
 longer; a later `terraform refresh` may change it from false to true.
 
+## Creation confirmed, refresh pending
+
+For domains and DNS records, this warning means EasyDNS returned a confirmed
+identity but the follow-up read failed. The provider saves that identity and
+the configured values, including domain deletion protection, and leaves
+unobserved computed details null. It uses a warning because an apply error
+would taint the confirmed resource and could lead to replacement.
+
+Restore API access and run `terraform plan` again. Pending resources stay in
+state if reads still fail or report absence before the first successful
+refresh. Do not remove state or repeat creation to retry a read. If state was
+lost, inspect EasyDNS and import the domain name or `domain:record_id` shown in
+the warning. If EasyDNS confirms that the object truly does not exist, resolve
+that discrepancy deliberately before removing its state.
+
+## Invalid API response
+
+Missing/null data, invalid presence flags, mismatched domain identities, or
+inconsistent collection metadata produce an error that retains existing state.
+These responses do not prove deletion. Check API availability and retry the
+read after the response problem is resolved.
+
 ## A second plan is not empty
 
 - Check normalization: domains become lower-case IDNA ASCII without a trailing

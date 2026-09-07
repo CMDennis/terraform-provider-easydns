@@ -44,6 +44,10 @@ An explicitly configured Terraform attribute takes precedence over its
 environment variable. `api_url` takes precedence over `environment`; reserve it
 for development proxies and controlled tests.
 
+Custom endpoints must use HTTPS. Only literal loopback IP addresses may use
+HTTP for local test servers. Redirects are rejected, so configure the final API
+endpoint directly instead of a redirecting proxy URL.
+
 ## Environment URLs
 
 - `sandbox`: `https://sandbox.rest.easydns.net`

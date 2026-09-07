@@ -30,10 +30,12 @@ func TestCreateRecordReconcilesNewIDInBothWriteModes(t *testing.T) {
 				case http.MethodGet:
 					read := reads.Add(1)
 					data := `[{"id":"10","domain":"example.invalid","host":"www","type":"A","rdata":"192.0.2.10","ttl":300,"prio":0,"geozone_id":0}]`
+					count := 1
 					if read >= 3 {
 						data = `[` + data[1:len(data)-1] + `,` + matchingARecord + `]`
+						count = 2
 					}
-					_, _ = fmt.Fprintf(response, `{"data":%s,"count":%d,"total":%d,"status":200}`, data, 1, 1)
+					_, _ = fmt.Fprintf(response, `{"data":%s,"count":%d,"total":%d,"status":200}`, data, count, count)
 				case http.MethodPut:
 					writes.Add(1)
 					if request.URL.Path != test.writePath {

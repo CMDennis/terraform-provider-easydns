@@ -332,7 +332,8 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
-	if _, err := r.client.CreateDomain(ctx, request); err != nil {
+	created, err := r.client.CreateDomain(ctx, request)
+	if err != nil {
 		if errors.Is(err, ErrDomainRegistrationDisabled) {
 			resp.Diagnostics.AddError("Domain Registration Is Disabled",
 				"Set enable_domain_registration = true on the easydns provider to register domains, or set dns_only = true.")
@@ -342,10 +343,29 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
-	domain, err := r.client.GetDomain(ctx, request.Domain)
+	// Persist ownership before any further network operation. Computed values
+	// remain null until observed; in particular on_system marks a pending read.
+	plan.ID = types.StringValue(created.Domain)
+	plan.Exists = types.BoolNull()
+	plan.OnSystem = types.BoolNull()
+	plan.Expiry = types.StringNull()
+	plan.NextDue = types.StringNull()
+	plan.ClonedTo = types.StringNull()
+	plan.ServiceID = types.Int64Null()
+	plan.SubscriptionID = types.Int64Null()
+	resp.Diagnostics.Append(resp.State.Set(context.WithoutCancel(ctx), plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	domain, err := r.client.WaitForDomain(ctx, created.Domain)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading the created domain",
-			fmt.Sprintf("%s was created but could not be read back: %s", request.Domain, err))
+		// An error would taint a confirmed, potentially billable domain and
+		// invite replacement. Retain it with a warning and retry reads later.
+		resp.Diagnostics.AddWarning("Domain created; refresh pending",
+			fmt.Sprintf("EasyDNS confirmed creation of %s, but it could not be read back: %s. "+
+				"Its identity and deletion protection were saved. Restore API access and run terraform plan again; do not recreate it or remove it from state. "+
+				"If state was lost, the import identity is %s.", created.Domain, err, created.Domain))
 		return
 	}
 	applyDomainToResourceModel(&plan, domain)
@@ -359,7 +379,15 @@ func (r *DomainResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	domain, err := r.client.GetDomain(ctx, state.Domain.ValueString())
+	var domain *Domain
+	var err error
+	if state.OnSystem.IsNull() || state.OnSystem.IsUnknown() {
+		// A confirmed creation that has never been observed must not be
+		// forgotten just because it is still absent from a read replica.
+		domain, err = r.client.WaitForDomain(ctx, state.Domain.ValueString())
+	} else {
+		domain, err = r.client.GetDomain(ctx, state.Domain.ValueString())
+	}
 	if err != nil {
 		if IsNotFound(err) {
 			resp.State.RemoveResource(ctx)

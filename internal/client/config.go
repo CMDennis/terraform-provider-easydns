@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"strings"
 	"sync"
@@ -136,6 +137,11 @@ func New(config Config) (*Client, error) {
 	if httpClient.Timeout == 0 {
 		httpClient.Timeout = httpTimeout
 	}
+	// Redirects can replay billable mutations and forward credentials or bodies.
+	// Apply the boundary even when the caller supplies an HTTP client.
+	httpClient.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
 
 	requestInterval := config.RequestInterval
 	if requestInterval == 0 {
@@ -238,13 +244,21 @@ func (c *Client) DomainRegistrationEnabled() bool {
 func parseBaseURL(value string) (*url.URL, error) {
 	parsed, err := url.Parse(strings.TrimSpace(value))
 	if err != nil {
-		return nil, fmt.Errorf("invalid EasyDNS API URL: %w", err)
+		return nil, fmt.Errorf("invalid EasyDNS API URL")
 	}
 	if parsed.Scheme != "http" && parsed.Scheme != "https" {
-		return nil, fmt.Errorf("EasyDNS API URL scheme must be http or https")
+		return nil, fmt.Errorf("EasyDNS API URL scheme must be https")
 	}
 	if parsed.Host == "" {
 		return nil, fmt.Errorf("EasyDNS API URL must include a host")
+	}
+	if parsed.Scheme == "http" {
+		// Literal loopback addresses support local test servers without allowing
+		// plaintext credentials on a network endpoint or trusting DNS resolution.
+		address, err := netip.ParseAddr(parsed.Hostname())
+		if err != nil || !address.IsLoopback() {
+			return nil, fmt.Errorf("EasyDNS API URL must use HTTPS (HTTP is allowed only for literal loopback test addresses)")
+		}
 	}
 	if parsed.User != nil {
 		return nil, fmt.Errorf("EasyDNS API URL must not include credentials")

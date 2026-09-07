@@ -11,6 +11,15 @@ Manages a DNS record in EasyDNS. Supports A, AAAA, CNAME, MX, TXT, NS, SRV, CAA,
 
 Creates take a pre-write ID snapshot and select only a newly observed matching record. Updates and deletes poll by record ID until the desired state is observable. Mutations are never blindly retried after an uncertain response.
 
+If creation returns a confirmed record ID but read-back fails, the provider
+saves that ID and the planned configuration and returns a refresh warning.
+`last_mod` stays null until a successful read verifies the effective values.
+Restore API access and run `terraform plan` again; a still-unavailable read
+retains the pending record in state. Do not remove it or recreate it to retry
+the read. If state was lost, verify the record in EasyDNS and import it using
+`domain:record_id`. An ambiguous write with no confirmed ID still returns an
+error and needs inspection before another apply.
+
 ## Example Usage
 
 ### A Record

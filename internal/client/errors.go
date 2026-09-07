@@ -70,7 +70,8 @@ func IsNotFound(err error) bool {
 	}
 
 	var apiError *APIError
-	return errors.As(err, &apiError) && (apiError.HTTPStatus == 404 || apiError.Code == 404)
+	return errors.As(err, &apiError) && (apiError.HTTPStatus == 404 ||
+		(apiError.HTTPStatus >= 200 && apiError.HTTPStatus < 300 && apiError.Code == 404))
 }
 
 type ResponseTooLargeError struct {

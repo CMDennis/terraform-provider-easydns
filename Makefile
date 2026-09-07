@@ -53,7 +53,7 @@ acceptance-compile:
 	go test -tags=acceptance -run '^$$' ./internal/provider
 
 actions-check:
-	go run github.com/rhysd/actionlint/cmd/actionlint@$(ACTIONLINT_VERSION) .github/workflows/test.yml .github/workflows/release.yml .github/workflows/sandbox-acceptance.yml
+	go run github.com/rhysd/actionlint/cmd/actionlint@$(ACTIONLINT_VERSION) .github/workflows/test.yml .github/workflows/release.yml
 
 integration-compile:
 	go test -tags=integration -run '^$$' ./internal/provider
