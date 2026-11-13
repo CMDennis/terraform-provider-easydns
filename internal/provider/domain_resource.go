@@ -288,18 +288,23 @@ func (r *DomainResource) ModifyPlan(ctx context.Context, req resource.ModifyPlan
 
 	// EasyDNS has no update operation for these; replacing them would mean
 	// deleting and re-adding a real domain, so a change is refused instead.
+	//
+	// An imported domain has no recorded value for the creation-only fields,
+	// because EasyDNS does not report them. A null state value is therefore
+	// "never recorded", not a change: the configuration is adopted in place.
 	immutable := []struct {
-		name    string
-		planned string
-		current string
+		name     string
+		planned  string
+		current  string
+		recorded bool
 	}{
-		{"domain", plan.Domain.ValueString(), state.Domain.ValueString()},
-		{"service", plan.Service.ValueString(), state.Service.ValueString()},
-		{"currency", plan.Currency.ValueString(), state.Currency.ValueString()},
-		{"dns_only", plan.DNSOnly.String(), state.DNSOnly.String()},
+		{"domain", plan.Domain.ValueString(), state.Domain.ValueString(), !state.Domain.IsNull()},
+		{"service", plan.Service.ValueString(), state.Service.ValueString(), !state.Service.IsNull()},
+		{"currency", plan.Currency.ValueString(), state.Currency.ValueString(), !state.Currency.IsNull()},
+		{"dns_only", plan.DNSOnly.String(), state.DNSOnly.String(), !state.DNSOnly.IsNull()},
 	}
 	for _, field := range immutable {
-		if field.planned != field.current {
+		if field.recorded && field.planned != field.current {
 			resp.Diagnostics.AddAttributeError(
 				path.Root(field.name),
 				"Immutable Domain Attribute Changed",
@@ -309,7 +314,7 @@ func (r *DomainResource) ModifyPlan(ctx context.Context, req resource.ModifyPlan
 			)
 		}
 	}
-	if plan.Term.ValueInt64() != state.Term.ValueInt64() {
+	if !state.Term.IsNull() && plan.Term.ValueInt64() != state.Term.ValueInt64() {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("term"),
 			"Immutable Domain Attribute Changed",

@@ -206,6 +206,55 @@ func TestDomainPlanRefusesImmutableChangesInsteadOfReplacing(t *testing.T) {
 	}
 }
 
+// ImportState records only the domain and deletion protection, and EasyDNS
+// does not report the creation-only fields. The first plan after an import
+// must adopt the configuration rather than report it as an immutable change.
+func TestDomainPlanAdoptsConfigurationAfterImport(t *testing.T) {
+	t.Parallel()
+
+	client, err := NewConfiguredClient("https://sandbox.rest.easydns.net", "token", "key", RecordWriteModeSynchronous, false, 0, 0)
+	if err != nil {
+		t.Fatalf("create client: %v", err)
+	}
+	domainResource := &DomainResource{client: client}
+
+	schemaResponse := &resource.SchemaResponse{}
+	domainResource.Schema(context.Background(), resource.SchemaRequest{}, schemaResponse)
+
+	state := tfsdk.State{Schema: schemaResponse.Schema, Raw: domainPlan(t, schemaResponse.Schema, map[string]tftypes.Value{
+		"id":                  tftypes.NewValue(tftypes.String, "example.invalid"),
+		"domain":              tftypes.NewValue(tftypes.String, "example.invalid"),
+		"deletion_protection": tftypes.NewValue(tftypes.Bool, true),
+	}).Raw}
+	plan := domainPlan(t, schemaResponse.Schema, map[string]tftypes.Value{
+		"domain":   tftypes.NewValue(tftypes.String, "example.invalid"),
+		"service":  tftypes.NewValue(tftypes.String, "pro"),
+		"term":     tftypes.NewValue(tftypes.Number, 2),
+		"currency": tftypes.NewValue(tftypes.String, "USD"),
+		"dns_only": tftypes.NewValue(tftypes.Bool, true),
+	})
+
+	response := &resource.ModifyPlanResponse{Plan: plan}
+	domainResource.ModifyPlan(context.Background(), resource.ModifyPlanRequest{Plan: plan, State: state}, response)
+	if response.Diagnostics.HasError() {
+		t.Fatalf("an imported domain could not be planned: %v", response.Diagnostics)
+	}
+
+	// The domain name is recorded by the import, so it stays immutable.
+	renamed := domainPlan(t, schemaResponse.Schema, map[string]tftypes.Value{
+		"domain":   tftypes.NewValue(tftypes.String, "other.invalid"),
+		"service":  tftypes.NewValue(tftypes.String, "pro"),
+		"term":     tftypes.NewValue(tftypes.Number, 2),
+		"currency": tftypes.NewValue(tftypes.String, "USD"),
+		"dns_only": tftypes.NewValue(tftypes.Bool, true),
+	})
+	response = &resource.ModifyPlanResponse{Plan: renamed}
+	domainResource.ModifyPlan(context.Background(), resource.ModifyPlanRequest{Plan: renamed, State: state}, response)
+	if !response.Diagnostics.HasError() {
+		t.Fatal("a domain rename was planned silently after an import")
+	}
+}
+
 func TestPremiumPriceCeilingComparesExactly(t *testing.T) {
 	t.Parallel()
 
