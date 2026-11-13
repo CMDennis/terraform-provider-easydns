@@ -69,6 +69,8 @@ release-check:
 	go run github.com/goreleaser/goreleaser/v2@$(GORELEASER_VERSION) release --snapshot --clean --skip=sign
 	@checksum_file="$$(find dist -maxdepth 1 -name '*_SHA256SUMS' -print -quit)"; \
 	  test -n "$$checksum_file"; \
+	  cp terraform-registry-manifest.json "$${checksum_file%_SHA256SUMS}_manifest.json"; \
+	  grep -q '_manifest\.json$$' "$$checksum_file"; \
 	  checksum_name="$$(basename "$$checksum_file")"; \
 	  if command -v sha256sum >/dev/null 2>&1; then \
 	    cd dist && sha256sum --check "$$checksum_name"; \

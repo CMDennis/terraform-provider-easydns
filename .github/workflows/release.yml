@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   verify:
@@ -44,6 +44,8 @@ jobs:
   goreleaser:
     needs: verify
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -62,20 +64,39 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.PASSPHRASE }}
 
-      - name: Run GoReleaser
+      - name: Build and sign without publishing
         uses: goreleaser/goreleaser-action@v7
         with:
           version: v2.18.0
-          args: release --clean
+          args: release --clean --skip=publish
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Verify checksums and signature
+      - name: Verify checksums, manifest and signature
         shell: bash
         run: |
           checksum_file=$(find dist -maxdepth 1 -name '*_SHA256SUMS' -print -quit)
           test -n "$checksum_file"
           test -f "${checksum_file}.sig"
-          (cd dist && sha256sum --check "$(basename "$checksum_file")")
+          cp terraform-registry-manifest.json "${checksum_file%_SHA256SUMS}_manifest.json"
+          grep -q '_manifest\.json$' "$checksum_file"
+          (cd dist && sha256sum --check --strict "$(basename "$checksum_file")")
           gpg --verify "${checksum_file}.sig" "$checksum_file"
+
+      - name: Publish the verified release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          prefix="dist/terraform-provider-easydns_${RELEASE_TAG#v}"
+          flags=(--prerelease=false)
+          if [[ "$RELEASE_TAG" == *-* ]]; then
+            flags=(--prerelease --latest=false)
+          fi
+          gh release create "$RELEASE_TAG" --verify-tag --title "$RELEASE_TAG" \
+            --notes "See the [changelog](https://github.com/${GITHUB_REPOSITORY}/blob/${RELEASE_TAG}/CHANGELOG.md) for this release." \
+            "${flags[@]}" \
+            "${prefix}"_*.zip \
+            "${prefix}_manifest.json" "${prefix}_SHA256SUMS" "${prefix}_SHA256SUMS.sig"

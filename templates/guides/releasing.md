@@ -37,9 +37,10 @@ and checksums. It never publishes.
 ## Publish
 
 Create an annotated semantic-version tag from the reviewed commit and push the
-tag. The release workflow imports the signing key, runs `goreleaser release
---clean`, verifies every archive against the checksum file, and verifies the
-detached signature before completing.
+tag. The release workflow imports the signing key and runs `goreleaser release
+--clean --skip=publish`. It then verifies every archive and the Registry
+protocol manifest against the checksum file, verifies the detached signature,
+and only after that creates the GitHub release with `gh release create`.
 
 Do not rerun a partially published version with different bytes. Fix the
 workflow and publish a new version.
