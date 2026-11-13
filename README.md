@@ -15,7 +15,7 @@ A Terraform provider for managing DNS records and zones via the [EasyDNS REST AP
 ## Requirements
 
 - [Terraform](https://www.terraform.io/downloads.html) >= 1.14
-- [Go](https://go.dev/doc/install) >= 1.25 (for building)
+- [Go](https://go.dev/doc/install) >= 1.26 (for building)
 - EasyDNS API credentials (token and key)
 
 For a first sandbox configuration, follow the

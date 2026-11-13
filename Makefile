@@ -1,7 +1,7 @@
 # Pin the toolchain to the one go.mod selects, so a local run cannot silently
 # download a newer Go than CI has and pass a gate that CI then fails. CI gets
 # this pin from actions/setup-go reading go.mod; this is the local equivalent.
-GOTOOLCHAIN := go1.26.8
+GOTOOLCHAIN := go1.26.11
 export GOTOOLCHAIN
 
 TFPLUGINDOCS_VERSION ?= v0.25.0

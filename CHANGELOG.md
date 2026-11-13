@@ -3,6 +3,32 @@
 All notable changes will be documented here. Releases follow Semantic
 Versioning after v1.0.0.
 
+## v1.0.3
+
+### Fixed
+
+- Allow planning an imported `easydns_domain`. EasyDNS does not report
+  `service`, `term`, `currency`, or `dns_only`, so an import left them
+  unrecorded and every later plan failed with "Immutable Domain Attribute
+  Changed". Unrecorded values are now adopted from the configuration in place;
+  recorded values remain immutable.
+
+### Security
+
+- Build with Go 1.26.11 and update `google.golang.org/grpc` to v1.83.2 and
+  `golang.org/x/net` to v0.60.0, clearing the HTTP, TLS, X.509, and gRPC
+  advisories reported by `govulncheck`. Building from source now requires
+  Go 1.26 or later.
+
+### Release process
+
+- Ship `terraform-registry-manifest.json` as a checksummed and signed release
+  asset. Earlier releases omitted it, so the Registry advertised protocol 5.0
+  for a protocol 6 provider.
+- Publish only after verification. The tag workflow builds and signs without
+  uploading, verifies the checksums, manifest, and signature, and then creates
+  the GitHub release. Write permission is limited to the publishing job.
+
 ## v1.0.2
 
 ### Security and reliability
